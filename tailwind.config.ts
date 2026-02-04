@@ -2,37 +2,50 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        // High-level brand colors defined once (Single Responsibility)
         primary: {
-          DEFAULT: "#003366", // Babcock Blue [cite: 1]
-          light: "#004080",
-          dark: "#002244",
+          DEFAULT: "#0f49bd", // Deep Blue
+          light: "#1e5dd8",
+          dark: "#0a3a95",
         },
-        secondary: {
-          DEFAULT: "#FBBF24", // Amber for warnings/alerts [cite: 360]
+        accent: {
+          DEFAULT: "#FFC107", // Amber Gold
+          light: "#FFD54F",
+          dark: "#FFA000",
         },
-        status: {
-          present: "#10B981", // Success color [cite: 347]
-          absent: "#EF4444", // Error/Danger color [cite: 347]
-          lms: "#3B82F6", // LMS Sync color [cite: 354]
-        },
-        success: "#10B981", // For "Present" status
-        danger: "#EF4444", // For errors/low attendance
-        surface: "#FFFFFF",
-        background: "#F9FAFB",
+        "background-light": "#f6f6f8",
+        "background-dark": "#051025", // Deep Navy
+        "surface-dark": "#0B162C",
+        glass: "rgba(255, 255, 255, 0.05)",
+        "glass-border": "rgba(255, 255, 255, 0.1)",
       },
-      borderRadius: {
-        lg: "0.5rem",
-        xl: "0.75rem", // For the 'stats cards' you mentioned [cite: 38]
+      fontFamily: {
+        display: ["Manrope", "sans-serif"],
+        body: ["Noto Sans", "sans-serif"],
+      },
+      backgroundImage: {
+        aurora: "radial-gradient(circle at 50% -20%, #1e3a8a 0%, #051025 40%, #051025 100%)",
+        "aurora-glow": "conic-gradient(from 90deg at 50% 50%, #00000000 50%, #0f49bd 100%)",
+      },
+      animation: {
+        float: "float 6s ease-in-out infinite",
+      },
+      keyframes: {
+        float: {
+          "0%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+          "100%": { transform: "translateY(0px)" },
+        },
       },
     },
   },
   plugins: [],
 };
+
 export default config;
