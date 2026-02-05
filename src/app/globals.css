@@ -6,8 +6,8 @@
   --background: #051025;
   --foreground: #ffffff;
 
-  /* Brand Colors from the design */
-  --color-primary: #256af4;
+  --color-primary: #2b6cee;
+  --color-primary-dark: #1a5bbd;
   --color-accent: #ffc107;
   --color-gold-accent: #f59e0b;
   --color-surface: #0b162c;
@@ -44,22 +44,9 @@ body {
 
 /* Aurora Background Gradient */
 .aurora-gradient {
-  background:
-    radial-gradient(
-      circle at 10% 20%,
-      rgba(37, 106, 244, 0.4) 0%,
-      rgba(5, 16, 37, 0) 50%
-    ),
-    radial-gradient(
-      circle at 90% 80%,
-      rgba(245, 158, 11, 0.2) 0%,
-      rgba(5, 16, 37, 0) 50%
-    ),
-    radial-gradient(
-      circle at 50% 50%,
-      rgba(37, 106, 244, 0.15) 0%,
-      rgba(5, 16, 37, 0) 60%
-    );
+  background: radial-gradient(circle at 10% 20%, rgba(37, 106, 244, 0.4) 0%, rgba(5, 16, 37, 0) 50%),
+              radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.2) 0%, rgba(5, 16, 37, 0) 50%),
+              radial-gradient(circle at 50% 50%, rgba(37, 106, 244, 0.15) 0%, rgba(5, 16, 37, 0) 60%);
 }
 
 /* Floating Animation */
@@ -107,4 +94,18 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
 }

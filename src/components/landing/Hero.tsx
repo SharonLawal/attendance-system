@@ -41,7 +41,7 @@ export function Hero() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="glass-panel rounded-xl p-4">
+              <div className="glass-panel rounded-lg p-4">
                 <p className="text-slate-400 text-xs mb-1">Total Students</p>
                 <p className="text-2xl font-bold text-white">247</p>
                 <div className="flex items-center gap-1 mt-1">
@@ -56,7 +56,7 @@ export function Hero() {
                 </div>
               </div>
 
-              <div className="glass-panel rounded-xl p-4">
+              <div className="glass-panel rounded-lg p-4">
                 <p className="text-slate-400 text-xs mb-1">Avg Attendance</p>
                 <p className="text-2xl font-bold text-white">89%</p>
                 <div className="flex items-center gap-1 mt-1">
@@ -72,12 +72,12 @@ export function Hero() {
               </div>
             </div>
 
-            <div className="glass-panel rounded-xl p-4">
+            <div className="glass-panel rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-white font-semibold text-sm">
                   Recent Activity
                 </h4>
-                <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span className="flex h-2 w-2 rounded-lg bg-green-500 animate-pulse"></span>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
