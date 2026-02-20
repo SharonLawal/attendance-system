@@ -10,7 +10,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-primary to-primary-light p-2 rounded-xl shadow-lg shadow-primary/20">
+            <div className="bg-gradient-to-br from-primary to-primary-light p-2 rounded-lg shadow-lg shadow-primary/20">
               <Icons.Location size={24} className="text-secondary" />
             </div>
             <span className="text-2xl font-black text-primary tracking-tight">
@@ -53,3 +53,4 @@ export function Navbar() {
     </nav>
   );
 }
+

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 interface Option {
     label: string;
     value: string;
+    disabled?: boolean;
 }
 
 interface SelectProps {
@@ -56,13 +57,17 @@ export function Select({ options, value, onChange, placeholder = "Select...", cl
                                 <li key={option.value}>
                                     <button
                                         type="button"
+                                        disabled={option.disabled}
                                         className={cn(
-                                            "w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-slate-50 transition-colors",
-                                            value === option.value && "bg-blue-50 text-blue-700 font-medium"
+                                            "w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors",
+                                            option.disabled ? "opacity-50 cursor-not-allowed bg-slate-50" : "hover:bg-slate-50 cursor-pointer",
+                                            value === option.value && !option.disabled && "bg-blue-50 text-blue-700 font-medium"
                                         )}
                                         onClick={() => {
-                                            onChange(option.value);
-                                            setIsOpen(false);
+                                            if (!option.disabled) {
+                                                onChange(option.value);
+                                                setIsOpen(false);
+                                            }
                                         }}
                                     >
                                         {option.label}
@@ -77,3 +82,4 @@ export function Select({ options, value, onChange, placeholder = "Select...", cl
         </div>
     );
 }
+

@@ -62,7 +62,7 @@ export default function SignupPage() {
         studentId: data.idNumber,
       });
       if (result.success) {
-        router.push("/auth/login");
+        router.push("/login");
       } else {
         setServerError(result.message);
       }
@@ -88,7 +88,7 @@ export default function SignupPage() {
 
         {/* Top Logo Area */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
+          <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/10">
             <MapPin size={20} className="text-yellow-400" />
           </div>
           <span className="text-xl font-bold text-white tracking-wide">
@@ -146,17 +146,16 @@ export default function SignupPage() {
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
                 Account Type
               </label>
-              <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
+              <div className="flex bg-slate-50 p-1 rounded-lg border border-slate-200">
                 {(["Student", "Lecturer"] as const).map((role) => (
                   <button
                     key={role}
                     type="button"
                     onClick={() => setValue("role", role)}
-                    className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
-                      selectedRole === role
+                    className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${selectedRole === role
                         ? "bg-white text-primary shadow-sm border border-slate-200"
                         : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     {role}
                   </button>
@@ -181,7 +180,7 @@ export default function SignupPage() {
                   <input
                     {...register("fullName")}
                     type="text"
-                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.fullName ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-xl focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
+                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.fullName ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
                     placeholder="e.g. Sharon Lawal"
                   />
                 </div>
@@ -204,7 +203,7 @@ export default function SignupPage() {
                   <input
                     {...register("email")}
                     type="email"
-                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.email ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-xl focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
+                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.email ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
                     placeholder="name@babcock.edu.ng"
                   />
                 </div>
@@ -227,7 +226,7 @@ export default function SignupPage() {
                   <input
                     {...register("idNumber")}
                     type="text"
-                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.idNumber ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-xl focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
+                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.idNumber ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
                     placeholder={getIDPlaceholder()}
                   />
                 </div>
@@ -250,7 +249,7 @@ export default function SignupPage() {
                   <input
                     {...register("password")}
                     type={showPassword ? "text" : "password"}
-                    className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.password ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-xl focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
+                    className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.password ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
                     placeholder="Create a password"
                   />
                   <button
@@ -280,7 +279,7 @@ export default function SignupPage() {
                   <input
                     {...register("confirmPassword")}
                     type={showPassword ? "text" : "password"}
-                    className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.confirmPassword ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-xl focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
+                    className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.confirmPassword ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
                     placeholder="Repeat password"
                   />
                 </div>
@@ -322,7 +321,7 @@ export default function SignupPage() {
               <button
                 disabled={isLoading}
                 type="submit"
-                className="mt-2 w-full bg-[#003366] hover:bg-[#002244] text-white font-bold py-4 px-4 rounded-xl transition-all transform active:scale-[0.99] shadow-lg shadow-blue-900/20 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="mt-2 w-full bg-[#003366] hover:bg-[#002244] text-white font-bold py-4 px-4 rounded-lg transition-all transform active:scale-[0.99] shadow-lg shadow-blue-900/20 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <Loader2 size={20} className="animate-spin text-white" />
@@ -339,7 +338,7 @@ export default function SignupPage() {
               <p className="text-sm text-slate-500 font-medium">
                 Already registered?{" "}
                 <Link
-                  href="/auth/login"
+                  href="/login"
                   className="font-bold text-primary hover:underline transition-all"
                 >
                   Sign in here
@@ -352,3 +351,4 @@ export default function SignupPage() {
     </div>
   );
 }
+

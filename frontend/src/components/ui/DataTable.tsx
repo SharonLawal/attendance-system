@@ -32,7 +32,7 @@ export function DataTable<T>({
 
     if (isLoading) {
         return (
-            <div className={cn("w-full h-64 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200", className)}>
+            <div className={cn("w-full h-64 flex flex-col items-center justify-center bg-white rounded-lg border border-slate-200", className)}>
                 <Loader2 className="w-8 h-8 text-babcock-blue animate-spin mb-4" />
                 <p className="text-slate-500 font-medium">Loading data...</p>
             </div>
@@ -53,7 +53,7 @@ export function DataTable<T>({
     }
 
     return (
-        <div className={cn("w-full overflow-hidden bg-white rounded-xl border border-slate-200 shadow-sm", className)}>
+        <div className={cn("w-full overflow-hidden bg-white rounded-lg border border-slate-200 shadow-sm", className)}>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left whitespace-nowrap">
                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
@@ -85,3 +85,4 @@ export function DataTable<T>({
         </div>
     );
 }
+

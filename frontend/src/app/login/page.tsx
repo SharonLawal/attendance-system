@@ -32,26 +32,10 @@ export default function LoginPage() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      role: "Student",
       email: "",
       password: "",
     },
   });
-
-  const selectedRole = watch("role");
-
-  const getPlaceholder = () => {
-    switch (selectedRole) {
-      case "Student":
-        return "student@student@babcock.edu.ng";
-      case "Lecturer":
-        return "lecturer@babcock.edu.ng";
-      case "Admin":
-        return "admin@babcock.edu.ng";
-      default:
-        return "email@babcock.edu.ng";
-    }
-  };
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -60,10 +44,10 @@ export default function LoginPage() {
     try {
       const result = await login(data);
 
-      if (result.success) {
-        if (data.role === "Student") router.push("/student/dashboard");
-        if (data.role === "Lecturer") router.push("/lecturer/dashboard");
-        if (data.role === "Admin") router.push("/admin/dashboard");
+      if (result.success && result.role) {
+        if (result.role === "Student") router.push("/student/dashboard");
+        if (result.role === "Lecturer") router.push("/lecturer/dashboard");
+        if (result.role === "Admin") router.push("/admin/dashboard");
       } else {
         setServerError(result.message);
       }
@@ -86,7 +70,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col gap-28">
           {/* Top Logo Area */}
           <div className="relative flex items-center gap-3">
-            <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
+            <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/10">
               <ShieldCheck size={20} className="text-yellow-400" />
             </div>
             <span className="text-xl font-bold text-white tracking-wide">
@@ -141,29 +125,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Role Selector */}
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">
-                I am a...
-              </label>
-              <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
-                {(["Student", "Lecturer", "Admin"] as const).map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setValue("role", role)}
-                    className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
-                      selectedRole === role
-                        ? "bg-white text-primary shadow-sm border border-slate-200"
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Login Form */}
             <form
               onSubmit={handleSubmit(onSubmit)}
@@ -181,8 +142,8 @@ export default function LoginPage() {
                   <input
                     {...register("email")}
                     type="email"
-                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.email ? "border-red-500 focus:ring-red-200" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-xl focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
-                    placeholder={getPlaceholder()}
+                    className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.email ? "border-red-500 focus:ring-red-200" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
+                    placeholder="email@babcock.edu.ng"
                   />
                 </div>
                 {errors.email && (
@@ -212,7 +173,7 @@ export default function LoginPage() {
                   <input
                     {...register("password")}
                     type={showPassword ? "text" : "password"}
-                    className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.password ? "border-red-500 focus:ring-red-200" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-xl focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
+                    className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.password ? "border-red-500 focus:ring-red-200" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
                     placeholder="••••••••"
                   />
                   <button
@@ -233,7 +194,7 @@ export default function LoginPage() {
               <button
                 disabled={isLoading}
                 type="submit"
-                className="mt-2 w-full bg-[#003366] hover:bg-[#002244] text-white font-bold py-3.5 px-4 rounded-xl transition-all transform active:scale-[0.99] shadow-lg shadow-blue-900/20 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="mt-2 w-full bg-[#003366] hover:bg-[#002244] text-white font-bold py-3.5 px-4 rounded-lg transition-all transform active:scale-[0.99] shadow-lg shadow-blue-900/20 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <Loader2 size={20} className="animate-spin text-white" />
@@ -250,7 +211,7 @@ export default function LoginPage() {
               <p className="text-sm text-slate-500 font-medium">
                 New to VeriPoint?{" "}
                 <Link
-                  href="/auth/signup"
+                  href="/signup"
                   className="font-bold text-primary hover:underline transition-all"
                 >
                   Create Student Account
@@ -263,3 +224,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

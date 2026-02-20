@@ -32,7 +32,7 @@ export function Alert({ title, description, variant = "info", className }: Alert
     };
 
     return (
-        <div className={cn("p-4 rounded-xl border flex items-start gap-3 shadow-sm", variants[variant], className)}>
+        <div className={cn("p-4 rounded-lg border flex items-start gap-3 shadow-sm", variants[variant], className)}>
             <Icon className={cn("w-6 h-6 flex-shrink-0 mt-0.5", iconColors[variant])} strokeWidth={2} />
             <div className="w-full">
                 <h4 className="font-semibold text-sm">{title}</h4>
@@ -41,3 +41,4 @@ export function Alert({ title, description, variant = "info", className }: Alert
         </div>
     );
 }
+

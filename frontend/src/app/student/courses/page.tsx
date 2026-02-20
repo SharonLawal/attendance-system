@@ -94,7 +94,7 @@ export default function StudentCourses() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 group-hover:bg-blue-50/50 transition-colors">
+                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-100 group-hover:bg-blue-50/50 transition-colors">
                     <div className="flex justify-between items-end mb-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Attendance</p>

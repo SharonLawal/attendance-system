@@ -64,3 +64,58 @@ export const ADMIN_USERS_DATA = [
     { id: 5, name: "Prof. Alan Turing", identifier: "S-1004", role: "Admin", status: "Active" },
     { id: 6, name: "Emily Brown", identifier: "20/4455", role: "Student", status: "Inactive" },
 ];
+
+// --- Lecturer Dashboard Demo Data ---
+export const CLASSROOM_LOCATIONS = [
+    { id: "bbs-rm-1", name: "BBS Room 1", capacity: 150 },
+    { id: "bbs-rm-2", name: "BBS Room 2", capacity: 100 },
+    { id: "sat-hub", name: "SAT Innovation Hub", capacity: 200 },
+    { id: "sat-lab-1", name: "SAT Computer Lab 1", capacity: 80 },
+    { id: "main-aud", name: "Main Auditorium", capacity: 2000 },
+];
+
+export const LECTURER_COURSES = [
+    { id: "1", code: "GEDS 400", title: "Software Engineering", totalStudents: 45, averageAttendance: 88, sessionsHeld: 14 },
+    { id: "2", code: "COSC 411", title: "Artificial Intelligence", totalStudents: 60, averageAttendance: 72, sessionsHeld: 12 },
+    { id: "3", code: "SENG 402", title: "Mobile Computing", totalStudents: 30, averageAttendance: 95, sessionsHeld: 8 },
+];
+
+export const LECTURER_SYNC_HISTORY = [
+    { id: 1, platform: "Google Classroom", course: "GEDS 400", date: "Oct 24, 2023", time: "11:00 AM", studentsSynced: 42, status: "Success" },
+    { id: 2, platform: "Microsoft Teams", course: "COSC 411", date: "Oct 20, 2023", time: "09:30 AM", studentsSynced: 58, status: "Success" },
+    { id: 3, platform: "Google Classroom", course: "SENG 402", date: "Oct 15, 2023", time: "02:15 PM", studentsSynced: 0, status: "Failed (API Error)" },
+];
+
+// --- Analytics & Reports Demo Data ---
+export const WEEKLY_ATTENDANCE = [
+    { day: "Mon", rate: 88 },
+    { day: "Tue", rate: 92 },
+    { day: "Wed", rate: 85 },
+    { day: "Thu", rate: 78 },
+    { day: "Fri", rate: 95 },
+];
+
+export const DEPARTMENT_RATES = [
+    { dept: "Computer Science", rate: 91 },
+    { dept: "Software Engineering", rate: 85 },
+    { dept: "Information Tech", rate: 76 },
+    { dept: "Computer Technology", rate: 88 },
+];
+
+export const CRITICAL_STUDENTS = [
+    { id: 1, name: "Michael Johnson", matric: "19/5432", dept: "Software Engineering", attendance: 45 },
+    { id: 2, name: "Emily Brown", matric: "20/4455", dept: "Computer Science", attendance: 68 },
+    { id: 3, name: "David Miller", matric: "21/4433", dept: "Information Tech", attendance: 72 },
+    { id: 4, name: "Sophia Wilson", matric: "22/7711", dept: "Software Engineering", attendance: 55 },
+];
+
+export const DETAILED_REPORTS = [
+    { id: 1, name: "Sharon Lawal", matric: "22/0234", course: "GEDS 400", date: "Oct 24, 2023", status: "Present" },
+    { id: 2, name: "John Doe", matric: "21/1234", course: "GEDS 400", date: "Oct 24, 2023", status: "Absent" },
+    { id: 3, name: "Michael Johnson", matric: "19/5432", course: "COSC 411", date: "Oct 23, 2023", status: "Present" },
+    { id: 4, name: "Sarah Williams", matric: "22/8876", course: "SENG 402", date: "Oct 22, 2023", status: "Late" },
+    { id: 5, name: "Emily Brown", matric: "20/4455", course: "GEDS 400", date: "Oct 24, 2023", status: "Absent" },
+    { id: 6, name: "David Miller", matric: "21/4433", course: "GEDS 400", date: "Oct 24, 2023", status: "Present" },
+    { id: 7, name: "Jessica Davis", matric: "22/1122", course: "COSC 411", date: "Oct 23, 2023", status: "Present" },
+];
+

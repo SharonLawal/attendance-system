@@ -26,7 +26,7 @@ export function Features() {
           <div className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-8 hover:bg-white/[0.07] transition-all duration-500">
             <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-yellow-400/10 blur-2xl group-hover:bg-yellow-400/20 transition-all"></div>
             
-            <div className="h-12 w-12 bg-slate-800/80 rounded-2xl flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
+            <div className="h-12 w-12 bg-slate-800/80 rounded-lg flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
               <MapPin size={24} strokeWidth={2.5} />
             </div>
             
@@ -36,7 +36,7 @@ export function Features() {
             </p>
             
             {/* Visual: Abstract Map */}
-            <div className="relative h-32 w-full rounded-xl bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center">
+            <div className="relative h-32 w-full rounded-lg bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center">
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]"></div>
               <div className="relative z-10 flex flex-col items-center">
                  <div className="h-16 w-16 border-2 border-dashed border-yellow-400/50 rounded-lg flex items-center justify-center animate-[pulse_3s_infinite]">
@@ -49,7 +49,7 @@ export function Features() {
 
           {/* Feature 2: Time-based Codes */}
           <div className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-8 hover:bg-white/[0.07] transition-all duration-500">
-             <div className="h-12 w-12 bg-slate-800/80 rounded-2xl flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
+             <div className="h-12 w-12 bg-slate-800/80 rounded-lg flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
               <Lock size={24} strokeWidth={2.5} />
             </div>
             <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Time-based Verification</h3>
@@ -58,7 +58,7 @@ export function Features() {
             </p>
             
             {/* Visual: Countdown */}
-            <div className="relative h-32 w-full rounded-xl bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center gap-4">
+            <div className="relative h-32 w-full rounded-lg bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center gap-4">
                <div className="flex flex-col items-center">
                  <div className="text-3xl font-mono font-bold text-white tracking-widest">
                    84<span className="text-yellow-400 animate-pulse">9</span>2
@@ -73,7 +73,7 @@ export function Features() {
 
           {/* Feature 3: Analytics */}
           <div className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-8 hover:bg-white/[0.07] transition-all duration-500">
-             <div className="h-12 w-12 bg-slate-800/80 rounded-2xl flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
+             <div className="h-12 w-12 bg-slate-800/80 rounded-lg flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
               <BarChart3 size={24} strokeWidth={2.5} />
             </div>
             <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Real-time Analytics</h3>
@@ -82,7 +82,7 @@ export function Features() {
             </p>
             
             {/* Visual: Bar Graph */}
-             <div className="relative h-32 w-full rounded-xl bg-[#0B162C] border border-white/5 overflow-hidden flex items-end justify-center gap-3 pb-4 px-8">
+             <div className="relative h-32 w-full rounded-lg bg-[#0B162C] border border-white/5 overflow-hidden flex items-end justify-center gap-3 pb-4 px-8">
                 <div className="w-8 bg-white/10 h-[40%] rounded-t-sm"></div>
                 <div className="w-8 bg-white/10 h-[65%] rounded-t-sm"></div>
                 <div className="w-8 bg-yellow-400 h-[85%] rounded-t-sm shadow-[0_0_15px_rgba(250,204,21,0.3)]"></div>
@@ -92,7 +92,7 @@ export function Features() {
 
           {/* Feature 4: LMS Integration (Redesigned) */}
           <div className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-8 hover:bg-white/[0.07] transition-all duration-500">
-             <div className="h-12 w-12 bg-slate-800/80 rounded-2xl flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
+             <div className="h-12 w-12 bg-slate-800/80 rounded-lg flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
               <RefreshCcw size={24} strokeWidth={2.5} />
             </div>
             <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Seamless Sync</h3>
@@ -101,7 +101,7 @@ export function Features() {
             </p>
             
             {/* Visual: Data Pipeline */}
-            <div className="relative h-32 w-full rounded-xl bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-evenly px-4">
+            <div className="relative h-32 w-full rounded-lg bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-evenly px-4">
                {/* Left Node (App) */}
                <div className="h-10 w-10 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center">
                   <ShieldCheck size={18} className="text-yellow-400" />
@@ -124,15 +124,15 @@ export function Features() {
 
           {/* Feature 5: Mobile First */}
           <div className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-8 hover:bg-white/[0.07] transition-all duration-500">
-             <div className="h-12 w-12 bg-slate-800/80 rounded-2xl flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
+             <div className="h-12 w-12 bg-slate-800/80 rounded-lg flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
               <Smartphone size={24} strokeWidth={2.5} />
             </div>
             <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Mobile Optimized</h3>
             <p className="text-slate-400 text-sm leading-relaxed mb-8">
               A responsive, lightweight interface designed for quick check-ins on any student device.
             </p>
-             <div className="relative h-32 w-full rounded-xl bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center">
-                <div className="w-16 h-24 border-2 border-white/10 rounded-xl bg-slate-900 relative flex flex-col items-center pt-2">
+             <div className="relative h-32 w-full rounded-lg bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center">
+                <div className="w-16 h-24 border-2 border-white/10 rounded-lg bg-slate-900 relative flex flex-col items-center pt-2">
                    <div className="h-1 w-6 bg-white/10 rounded-full mb-2"></div>
                    <div className="w-10 h-12 bg-white/5 rounded-sm"></div>
                    <div className="h-2 w-8 bg-yellow-400 rounded-full mt-3"></div>
@@ -142,14 +142,14 @@ export function Features() {
 
           {/* Feature 6: Security */}
           <div className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-8 hover:bg-white/[0.07] transition-all duration-500">
-             <div className="h-12 w-12 bg-slate-800/80 rounded-2xl flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
+             <div className="h-12 w-12 bg-slate-800/80 rounded-lg flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
               <ShieldCheck size={24} strokeWidth={2.5} />
             </div>
             <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Secure & Private</h3>
             <p className="text-slate-400 text-sm leading-relaxed mb-8">
               End-to-end encryption and privacy-focused design protecting student location data.
             </p>
-             <div className="relative h-32 w-full rounded-xl bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center">
+             <div className="relative h-32 w-full rounded-lg bg-[#0B162C] border border-white/5 overflow-hidden flex items-center justify-center">
                <ShieldCheck size={64} className="text-yellow-400/10 absolute" />
                <div className="h-2 w-2 bg-yellow-400 rounded-full shadow-[0_0_20px_rgba(250,204,21,1)]"></div>
              </div>

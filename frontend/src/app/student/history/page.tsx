@@ -82,7 +82,7 @@ export default function StudentHistory() {
         </div>
 
         {/* Toolbar */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
 
           {/* Search */}
           <div className="relative w-full md:w-96 shrink-0">
@@ -124,7 +124,7 @@ export default function StudentHistory() {
         </div>
 
         {/* DataTable Wrapper */}
-        <div className="bg-white border text-center border-slate-200 rounded-2xl p-1 overflow-hidden shadow-sm">
+        <div className="bg-white border text-center border-slate-200 rounded-lg p-1 overflow-hidden shadow-sm">
           <DataTable
             data={paginatedData}
             columns={columns}

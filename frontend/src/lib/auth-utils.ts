@@ -2,7 +2,6 @@
 export interface LoginCredentials {
   email: string;
   password: string;
-  role: "Student" | "Lecturer" | "Admin";
 }
 
 // Define the structure for Signup Data
@@ -21,6 +20,7 @@ export interface AuthResponse {
   message: string;
   token?: string;
   user?: any;
+  role?: "Student" | "Lecturer" | "Admin";
 }
 
 /**
@@ -32,7 +32,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 
   // Simulate network delay (1.5 seconds)
   await new Promise((resolve) => setTimeout(resolve, 1500));
-  
+
   // 1. Validate Email Domain (Babcock Constraint)
   if (!credentials.email.endsWith("@babcock.edu.ng")) {
     return {
@@ -49,11 +49,20 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     };
   }
 
-  // 3. Success Case
+  // 3. Simulate Backend Role Determination
+  let determinedRole: "Student" | "Lecturer" | "Admin" = "Student";
+  if (credentials.email.includes("admin")) {
+    determinedRole = "Admin";
+  } else if (!credentials.email.includes("student")) {
+    determinedRole = "Lecturer";
+  }
+
+  // 4. Success Case
   return {
     success: true,
     message: "Login successful! Redirecting...",
     token: "mock-jwt-token-12345",
+    role: determinedRole
   };
 };
 

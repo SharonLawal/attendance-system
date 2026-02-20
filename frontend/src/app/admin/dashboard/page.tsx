@@ -2,141 +2,136 @@
 
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { ShieldAlert, Edit2, Trash2, Search, Filter, MoreVertical } from "lucide-react";
+import { Users, Activity, CheckCircle2, AlertTriangle, ArrowRight, ActivitySquare } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { DataTable } from "@/components/ui/DataTable";
+import { Button } from "@/components/ui/Button";
+import Link from "next/link";
+import { ADMIN_STATS, ADMIN_USERS_DATA } from "@/lib/demodata";
 
-import { ADMIN_STATS as STATS, ADMIN_USERS_DATA as USERS_DATA } from "@/lib/demodata";
+// Mock Recent Activity Log
+const RECENT_ACTIVITY = [
+  { id: 1, user: "Dr. Jane Smith", action: "Created a new session for GEDS 400", time: "2 mins ago" },
+  { id: 2, user: "System", action: "Automated backup completed gracefully", time: "1 hr ago" },
+  { id: 3, user: "Admin", action: "Suspended student account (19/5432)", time: "3 hrs ago" },
+  { id: 4, user: "Prof. Alan Turing", action: "Downloaded system-wide attendance report", time: "5 hrs ago" },
+  { id: 5, user: "System", action: "Flagged 12 students for consecutive absences", time: "1 day ago" },
+];
 
 export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredUsers = USERS_DATA.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.identifier.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = ADMIN_USERS_DATA.filter(u =>
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.identifier.toLowerCase().includes(searchTerm.toLowerCase())
+  ).slice(0, 3); // Minimize directory
+
+  const userColumns = [
+    { header: "Name", accessorKey: "name" as keyof typeof ADMIN_USERS_DATA[0], className: "font-semibold" },
+    { header: "ID", accessorKey: "identifier" as keyof typeof ADMIN_USERS_DATA[0], className: "text-slate-500 text-sm" },
+    { header: "Role", accessorKey: "role" as keyof typeof ADMIN_USERS_DATA[0] },
+    {
+      header: "Status",
+      cell: (item: typeof ADMIN_USERS_DATA[0]) => (
+        <Badge variant={item.status === "Active" ? "success" : item.status === "Suspended" ? "danger" : "neutral"}>
+          {item.status}
+        </Badge>
+      )
+    }
+  ];
 
   return (
     <DashboardLayout role="admin">
-      <div className="space-y-6">
+      <div className="space-y-8">
 
-        {/* Top Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {STATS.map((stat, index) => (
-            <div key={index} className={`bg-white rounded-2xl border ${stat.border} shadow-sm p-6 flex items-center gap-4 transition-transform hover:-translate-y-1`}>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.color}`}>
-                <stat.icon className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-                <p className="text-2xl font-bold font-display text-slate-800">{stat.value}</p>
-              </div>
-            </div>
+        <div>
+          <h1 className="text-2xl font-bold font-display text-slate-900">System Command Center</h1>
+          <p className="text-slate-500 mt-1">High-level overview of university attendance metrics and system health.</p>
+        </div>
+
+        {/* Top Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {ADMIN_STATS.map((stat, idx) => (
+            <Card key={idx} className={`border-0 ring-1 ${stat.border} shadow-sm bg-white overflow-hidden relative group hover:shadow-md transition-all`}>
+              <div className={`absolute top-0 left-0 w-1.5 h-full ${stat.bg.replace('bg-', 'bg-').replace('50', '400')}`} />
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center shrink-0`}>
+                  <stat.icon className="w-6 h-6" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-500 truncate">{stat.title}</p>
+                  <h3 className="text-2xl font-bold font-display text-slate-800">{stat.value}</h3>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
-        {/* User Directory Table Container */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h3 className="text-lg font-bold font-display text-slate-800">User Directory</h3>
-              <p className="text-sm text-slate-500">Manage students, lecturers, and system administrators.</p>
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
+          {/* Quick User Directory */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="flex flex-row justify-between items-center border-b border-slate-100 pb-4">
+                <div>
+                  <CardTitle className="text-lg">Quick User Search</CardTitle>
+                  <CardDescription>Rapidly locate students or staff.</CardDescription>
+                </div>
+                <Link href="/admin/users">
+                  <Button variant="ghost" className="text-babcock-blue hover:text-babcock-blue/80 hover:bg-blue-50 gap-2 text-sm">
+                    View All <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent className="pt-5 space-y-4">
+                <SearchBar
+                  placeholder="Search by name, matric no, or staff ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-babcock-blue focus:border-transparent transition-all"
+                  className="max-w-md"
                 />
-              </div>
-              <button className="p-2 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-babcock-blue transition-colors">
-                <Filter className="w-4 h-4" />
-              </button>
-            </div>
+
+                <div className="border border-slate-100 rounded-lg overflow-hidden">
+                  <DataTable
+                    data={filteredUsers}
+                    columns={userColumns}
+                    emptyTitle="No users found matching that query."
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="overflow-x-auto min-h-[400px]">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                  <th className="font-semibold px-6 py-4">Name</th>
-                  <th className="font-semibold px-6 py-4">Matric No / ID</th>
-                  <th className="font-semibold px-6 py-4">Role</th>
-                  <th className="font-semibold px-6 py-4">Status</th>
-                  <th className="font-semibold px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
-                            {user.name.charAt(0)}
-                          </div>
-                          <span className="font-medium text-slate-900">{user.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-slate-600 font-mono text-sm">{user.identifier}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${user.role === 'Student' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
-                          user.role === 'Lecturer' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                            'bg-babcock-blue/10 text-babcock-blue border-babcock-blue/20'
-                          }`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${user.status === 'Active' ? 'text-emerald-700 bg-emerald-50' :
-                          user.status === 'Suspended' ? 'text-rose-700 bg-rose-50' :
-                            'text-slate-700 bg-slate-100'
-                          }`}>
-                          {user.status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
-                          {user.status === 'Suspended' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>}
-                          {user.status === 'Inactive' && <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>}
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-1.5 text-slate-400 hover:text-babcock-blue hover:bg-blue-50 rounded-lg transition-colors" title="Edit User">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Delete User">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                          <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" title="More Options">
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                      <ShieldAlert className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                      <p>No users found matching &quot;{searchTerm}&quot;</p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          {/* Audit Log */}
+          <div className="lg:col-span-1">
+            <Card className="border-slate-200 shadow-sm h-full flex flex-col">
+              <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ActivitySquare className="w-5 h-5 text-babcock-blue" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 flex-1 overflow-y-auto max-h-[400px]">
+                <ol className="relative border-l border-slate-200 ml-3 space-y-6">
+                  {RECENT_ACTIVITY.map((log) => (
+                    <li key={log.id} className="mb-6 ml-6 last:mb-0">
+                      <span className="absolute flex items-center justify-center w-6 h-6 bg-blue-50 rounded-full -left-3 ring-4 ring-white">
+                        <div className="w-2 h-2 rounded-full bg-babcock-blue" />
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{log.time}</span>
+                        <h4 className="text-sm font-semibold text-slate-800">{log.user}</h4>
+                        <p className="text-sm text-slate-500 mt-0.5">{log.action}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="p-4 border-t border-slate-100 bg-slate-50 text-sm text-slate-500 flex justify-between items-center">
-            <span>Showing {filteredUsers.length} users</span>
-            <div className="flex gap-1">
-              <button className="px-3 py-1 border border-slate-200 rounded hover:bg-white transition-colors disabled:opacity-50" disabled>Previous</button>
-              <button className="px-3 py-1 border border-slate-200 rounded bg-white text-babcock-blue font-medium shadow-sm transition-colors">1</button>
-              <button className="px-3 py-1 border border-slate-200 rounded hover:bg-white transition-colors">Next</button>
-            </div>
-          </div>
         </div>
 
       </div>

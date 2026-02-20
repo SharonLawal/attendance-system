@@ -6,7 +6,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={cn(
-        "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden",
+        "bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden",
         className
       )}
       {...props}
@@ -67,3 +67,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 CardFooter.displayName = "CardFooter"
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+

@@ -18,7 +18,7 @@ export function StatsCard({ title, value, description, icon: Icon, variant = "de
   };
 
   return (
-    <div className="bg-surface p-6 rounded-xl border border-slate-100 shadow-sm flex items-start gap-4">
+    <div className="bg-surface p-6 rounded-lg border border-slate-100 shadow-sm flex items-start gap-4">
       <div className={cn("p-3 rounded-lg", variants[variant])}>
         <Icon size={24} />
       </div>

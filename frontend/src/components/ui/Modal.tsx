@@ -53,7 +53,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
 
       <div
         className={cn(
-          "relative bg-white rounded-2xl shadow-xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200",
+          "relative bg-white rounded-lg shadow-xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200",
           maxWidthClasses[maxWidth]
         )}
       >
@@ -86,3 +86,4 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
     </div>
   );
 }
+

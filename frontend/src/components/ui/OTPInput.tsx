@@ -101,7 +101,7 @@ export function OTPInput({ length = 6, value, onChange, disabled }: OTPInputProp
                         onKeyDown={(e) => handleKeyDown(i, e)}
                         onPaste={handlePaste}
                         className={cn(
-                            "w-12 h-14 sm:w-16 sm:h-20 text-center text-3xl sm:text-4xl font-bold rounded-xl border-2 transition-all outline-none",
+                            "w-12 h-14 sm:w-16 sm:h-20 text-center text-3xl sm:text-4xl font-bold rounded-lg border-2 transition-all outline-none",
                             char
                                 ? "bg-white border-babcock-blue text-babcock-blue shadow-sm"
                                 : "bg-slate-50 border-slate-200 text-slate-800",
@@ -114,3 +114,4 @@ export function OTPInput({ length = 6, value, onChange, disabled }: OTPInputProp
         </div>
     );
 }
+

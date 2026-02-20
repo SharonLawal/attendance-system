@@ -174,18 +174,18 @@ export default function StudentDashboard() {
           {/* Right Column: Stats & Schedule */}
           <div className="lg:col-span-1 flex flex-col gap-6">
 
-            <div className="bg-babcock-blue rounded-2xl border border-blue-900 shadow-xl p-6 text-white relative overflow-hidden">
+            <div className="bg-babcock-blue rounded-lg border border-blue-900 shadow-xl p-6 text-white relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
               <div className="relative z-10">
                 <h3 className="text-lg font-bold font-display mb-1 text-slate-100">Quick Stats</h3>
                 <p className="text-blue-200 text-sm mb-6">Current Semester overview</p>
 
                 <div className="space-y-4">
-                  <div className="bg-white/10 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
+                  <div className="bg-white/10 rounded-lg p-4 border border-white/5 backdrop-blur-sm">
                     <p className="text-blue-100 text-sm">Overall Attendance</p>
                     <p className="text-3xl font-bold text-white mt-1 select-all">{MOCK_ATTENDANCE_PERCENTAGE}%</p>
                   </div>
-                  <div className="bg-white/10 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
+                  <div className="bg-white/10 rounded-lg p-4 border border-white/5 backdrop-blur-sm">
                     <p className="text-blue-100 text-sm">Classes Attended</p>
                     <p className="text-3xl font-bold text-white mt-1">42 <span className="text-lg text-blue-200 font-normal">/ 50</span></p>
                   </div>

@@ -20,7 +20,7 @@ export default function StudentSchedule() {
           <p className="text-slate-500 mt-1">Your weekly timetable and automated class reminders.</p>
         </div>
 
-        <div className="bg-white border text-left border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white border text-left border-slate-200 rounded-lg p-6 shadow-sm">
           <div className="flex flex-col space-y-8">
             {WEEKDAYS.map((day) => {
               const dayClasses = SCHEDULE_DATA.filter((c) => c.day === day)
@@ -40,7 +40,7 @@ export default function StudentSchedule() {
                   {dayClasses.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {dayClasses.map((cls, idx) => (
-                        <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 hover:border-babcock-blue/50 transition-colors group">
+                        <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg p-4 hover:border-babcock-blue/50 transition-colors group">
                           <div className="flex justify-between items-start mb-2">
                             <Badge variant={cls.type === "Lecture" ? "neutral" : cls.type === "Lab" ? "default" : "warning"} className="px-2 py-0 border-transparent">
                               {cls.type}

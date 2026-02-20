@@ -21,7 +21,7 @@ export function VerificationProgress({
     if (state === "idle") return null;
 
     return (
-        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex flex-col gap-4">
 
                 {/* Step 1: GPS Permission */}
@@ -113,3 +113,4 @@ export function VerificationProgress({
         </div>
     );
 }
+

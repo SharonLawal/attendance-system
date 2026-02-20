@@ -16,9 +16,6 @@ const passwordRule = z
 export const loginSchema = z.object({
   email: babcockEmailRule,
   password: passwordRule,
-  role: z.enum(["Student", "Lecturer", "Admin"], {
-    message: "Please select a valid role",
-  }),
 });
 
 // --- Signup Schema ---
@@ -29,7 +26,7 @@ export const signupSchema = z
     idNumber: z.string().min(4, "ID Number is required"),
     role: z.enum(["Student", "Lecturer"], {
       message: "Please select a valid role",
-    }), 
+    }),
     password: passwordRule,
     confirmPassword: passwordRule,
     terms: z.literal(true, {

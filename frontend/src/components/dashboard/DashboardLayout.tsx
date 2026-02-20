@@ -15,7 +15,9 @@ import {
     AlertTriangle,
     BookOpen,
     CalendarDays,
-    UserCircle
+    UserCircle,
+    BarChart3,
+    Link as LinkIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/Breadcrumb";
@@ -37,14 +39,17 @@ const roleNavItems = {
     ],
     lecturer: [
         { name: "Dashboard", href: "/lecturer/dashboard", icon: LayoutDashboard },
-        { name: "Manage Classes", href: "/lecturer/classes", icon: Users },
-        { name: "Settings", href: "/lecturer/settings", icon: Settings },
+        { name: "Reports", href: "/lecturer/reports", icon: BarChart3 },
+        { name: "Integrations", href: "/lecturer/integrations", icon: LinkIcon },
+        { name: "My Courses", href: "/lecturer/courses", icon: BookOpen },
+        { name: "Profile", href: "/lecturer/profile", icon: UserCircle },
     ],
     admin: [
         { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-        { name: "Users", href: "/admin/users", icon: Users },
-        { name: "System Health", href: "/admin/health", icon: AlertTriangle },
-        { name: "Settings", href: "/admin/settings", icon: Settings },
+        { name: "User Management", href: "/admin/users", icon: Users },
+        { name: "System Reports", href: "/admin/reports", icon: BarChart3 },
+        { name: "Session Audit", href: "/admin/sessions", icon: History },
+        { name: "Platform Settings", href: "/admin/settings", icon: Settings },
     ],
 };
 
@@ -52,6 +57,17 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const pathname = usePathname();
     const navItems = roleNavItems[role];
+
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+    // Dummy notification data (should ideally come from an API/context)
+    const notifications = [
+        { id: 1, text: "Your attendance for GEDS400 was successful.", time: "2m ago", read: false },
+        { id: 2, text: "Prof. Nnamdi published a new assignment.", time: "1hr ago", read: false },
+        { id: 3, text: "System maintenance scheduled for midnight.", time: "1d ago", read: true },
+    ];
+
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     // Close sidebar on route change for mobile
     useEffect(() => {
@@ -126,7 +142,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium",
+                                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group text-sm font-medium",
                                     isActive
                                         ? "bg-white/10 text-babcock-gold"
                                         : "text-slate-300 hover:bg-white/5 hover:text-white"
@@ -140,7 +156,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                 </nav>
 
                 <div className="p-4 mt-auto">
-                    <div className="bg-white/5 rounded-xl p-4 flex flex-col gap-3 border border-white/10">
+                    <div className="bg-white/5 rounded-lg p-4 flex flex-col gap-3 border border-white/10">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 text-white font-bold">
                                 JD
@@ -186,14 +202,55 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-4">
-                        <div className="sm:hidden font-semibold text-slate-900 absolute left-1/2 -translate-x-1/2">
+                    <div className="flex items-center gap-2 sm:gap-4 relative">
+                        <div className="sm:hidden font-semibold text-slate-900 absolute left-1/2 -translate-x-1/2 whitespace-nowrap">
                             {getPageTitle()}
                         </div>
-                        <button className="relative p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" aria-label="Notifications">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                        </button>
+
+                        {/* Notifications Dropdown */}
+                        <div className="relative">
+                            <button
+                                className="relative p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none"
+                                aria-label="Notifications"
+                                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                            >
+                                <Bell className="w-5 h-5" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                                )}
+                            </button>
+
+                            {isNotificationsOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setIsNotificationsOpen(false)}
+                                    />
+                                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                        <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                            <span className="font-semibold text-slate-800">Notifications</span>
+                                            {unreadCount > 0 && (
+                                                <button className="text-xs text-babcock-blue font-medium hover:underline">Mark all read</button>
+                                            )}
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto">
+                                            {notifications.map(n => (
+                                                <div key={n.id} className={`p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3 ${!n.read ? 'bg-blue-50/30' : ''}`}>
+                                                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.read ? 'bg-babcock-blue' : 'bg-slate-300'}`} />
+                                                    <div className="flex-1">
+                                                        <p className={`text-sm leading-tight ${!n.read ? 'text-slate-800 font-medium' : 'text-slate-600'}`}>{n.text}</p>
+                                                        <span className="text-xs text-slate-400 mt-1 block">{n.time}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="p-2 text-center bg-slate-50 border-t border-slate-100">
+                                            <button className="text-sm text-babcock-blue font-semibold hover:text-blue-800">View All Notifications</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </header>
 
@@ -207,3 +264,4 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         </div>
     );
 }
+

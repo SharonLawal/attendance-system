@@ -74,7 +74,7 @@ export default function StudentProfile() {
                 <CardDescription>Official university communication channels.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-4">
                   <label className="text-xs font-semibold text-slate-500 uppercase">Primary Email Address</label>
                   <div className="flex items-center justify-between mt-1">
                     <p className="text-slate-800 font-medium">john.doe@student.babcock.edu.ng</p>
@@ -93,7 +93,7 @@ export default function StudentProfile() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:border-slate-300 transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:border-slate-300 transition-colors group cursor-pointer">
                   <div>
                     <p className="font-semibold text-slate-700 text-sm">Change Password</p>
                     <p className="text-xs text-slate-500 mt-1">Last changed 3 months ago</p>
@@ -101,7 +101,7 @@ export default function StudentProfile() {
                   <Button variant="outline" size="sm" className="hidden sm:flex">Update</Button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:border-slate-300 transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:border-slate-300 transition-colors group cursor-pointer">
                   <div>
                     <p className="font-semibold text-slate-700 text-sm">Two-Factor Authentication</p>
                     <p className="text-xs text-slate-500 mt-1">Add an extra layer of security</p>
