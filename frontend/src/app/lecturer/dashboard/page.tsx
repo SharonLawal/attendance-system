@@ -11,15 +11,20 @@ export default function LecturerDashboard() {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (sessionActive && timeLeft > 0) {
+    if (sessionActive) {
       timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setSessionActive(false);
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0 && sessionActive) {
-      setSessionActive(false);
     }
     return () => clearInterval(timer);
-  }, [sessionActive, timeLeft]);
+  }, [sessionActive]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);

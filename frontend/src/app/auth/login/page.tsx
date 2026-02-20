@@ -43,9 +43,9 @@ export default function LoginPage() {
   const getPlaceholder = () => {
     switch (selectedRole) {
       case "Student":
-        return "student.name@babcock.edu.ng";
+        return "student@student@babcock.edu.ng";
       case "Lecturer":
-        return "lecturer.name@babcock.edu.ng";
+        return "lecturer@babcock.edu.ng";
       case "Admin":
         return "admin@babcock.edu.ng";
       default:
@@ -61,7 +61,7 @@ export default function LoginPage() {
       const result = await login(data);
 
       if (result.success) {
-        if (data.role === "Student") router.push("/student/layout");
+        if (data.role === "Student") router.push("/student/dashboard");
         if (data.role === "Lecturer") router.push("/lecturer/dashboard");
         if (data.role === "Admin") router.push("/admin/dashboard");
       } else {

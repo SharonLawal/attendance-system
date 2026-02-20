@@ -1,144 +1,154 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState } from "react";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { History, Filter, Search, Download } from "lucide-react";
+import { DataTable } from "@/components/ui/DataTable";
+import { Badge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Select";
+import { Pagination } from "@/components/ui/Pagination";
+import { Button } from "@/components/ui/Button";
+
+import { RECENT_HISTORY, EXTENDED_HISTORY } from "@/lib/demodata";
 
 export default function StudentHistory() {
-  const attendanceHistory = [
-    { course: "CSC 301", name: "Data Structures", date: "Feb 4, 2026", time: "10:05 AM", location: "Lecture Hall A", method: "GPS + OTC", status: "present" },
-    { course: "CSC 305", name: "Database Systems", date: "Feb 4, 2026", time: "2:05 PM", location: "Lab Building", method: "GPS + OTC", status: "present" },
-    { course: "CSC 320", name: "Web Development", date: "Feb 3, 2026", time: "4:10 PM", location: "Computer Lab 2", method: "GPS + OTC", status: "present" },
-    { course: "CSC 301", name: "Data Structures", date: "Feb 3, 2026", time: "10:03 AM", location: "Lecture Hall A", method: "GPS + OTC", status: "present" },
-    { course: "GEDS 400", name: "Entrepreneurship", date: "Feb 2, 2026", time: "-", location: "-", method: "-", status: "absent" },
-    { course: "MTH 202", name: "Linear Algebra", date: "Feb 2, 2026", time: "10:08 AM", location: "Math Building", method: "GPS + OTC", status: "present" },
-    { course: "CSC 305", name: "Database Systems", date: "Feb 1, 2026", time: "2:03 PM", location: "Lab Building", method: "LMS Sync (Teams)", status: "online" },
-    { course: "CSC 320", name: "Web Development", date: "Feb 1, 2026", time: "-", location: "-", method: "-", status: "absent" },
+  const [filterCourse, setFilterCourse] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 5;
+
+  // Filter Logic
+  const filteredData = EXTENDED_HISTORY.filter(record => {
+    const matchesCourse = filterCourse === "all" || record.course === filterCourse;
+    const matchesSearch = record.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.date.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCourse && matchesSearch;
+  });
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const columns = [
+    { header: "Course Code", accessorKey: "course" as keyof typeof EXTENDED_HISTORY[0], className: "font-bold text-slate-800" },
+    { header: "Date", accessorKey: "date" as keyof typeof EXTENDED_HISTORY[0] },
+    { header: "Time", accessorKey: "time" as keyof typeof EXTENDED_HISTORY[0] },
+    {
+      header: "Verification Method",
+      cell: (item: any) => (
+        <span className="text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded-md text-xs">
+          {item.method || "GPS + OTC"}
+        </span>
+      )
+    },
+    {
+      header: "Status",
+      cell: (item: typeof EXTENDED_HISTORY[0]) => (
+        <Badge
+          variant={item.status === "Present" ? "success" : item.status === "Late" ? "warning" : "danger"}
+          className="uppercase tracking-wider text-[10px]"
+        >
+          {item.status}
+        </Badge>
+      )
+    },
+    {
+      header: "Actions",
+      cell: () => (
+        <button className="text-babcock-blue hover:underline text-xs font-semibold">View Details</button>
+      )
+    }
   ];
 
-  const stats = {
-    totalSessions: 48,
-    present: 42,
-    absent: 6,
-    online: 4,
-    percentage: 87.5
-  };
-
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Attendance History</h1>
-          <p className="text-gray-600 mt-1">Complete record of all attendance sessions</p>
+    <DashboardLayout role="student">
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-slate-900 flex items-center gap-2">
+              <History className="w-6 h-6 text-babcock-blue" />
+              Attendance Log
+            </h1>
+            <p className="text-slate-500 mt-1">Review your historical attendance records across all courses.</p>
+          </div>
+
+          <Button variant="outline" className="gap-2 shrink-0">
+            <Download className="w-4 h-4" />
+            Export PDF
+          </Button>
         </div>
-        <select className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          <option>All Courses</option>
-          <option>CSC 301</option>
-          <option>CSC 305</option>
-          <option>CSC 320</option>
-          <option>GEDS 400</option>
-          <option>MTH 202</option>
-        </select>
+
+        {/* Toolbar */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+
+          {/* Search */}
+          <div className="relative w-full md:w-96 shrink-0">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all placeholder-slate-400 bg-slate-50"
+              placeholder="Search by course or date..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 shrink-0">
+              <Filter className="w-4 h-4" />
+              Course Filter:
+            </div>
+            <div className="min-w-[140px]">
+              <Select
+                options={[
+                  { label: "All Courses", value: "all" },
+                  { label: "GEDS 400", value: "GEDS 400" },
+                  { label: "SENG 402", value: "SENG 402" },
+                  { label: "COSC 411", value: "COSC 411" },
+                  { label: "GEDS 420", value: "GEDS 420" },
+                ]}
+                value={filterCourse}
+                onChange={(val) => {
+                  setFilterCourse(val);
+                  setCurrentPage(1); // Reset page on filter change
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* DataTable Wrapper */}
+        <div className="bg-white border text-center border-slate-200 rounded-2xl p-1 overflow-hidden shadow-sm">
+          <DataTable
+            data={paginatedData}
+            columns={columns}
+            emptyTitle="No records found"
+            emptyDescription="There are no attendance logs matching your current filters."
+            className="border-0 shadow-none rounded-none"
+          />
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex justify-between items-center py-2 px-1">
+          <p className="text-sm text-slate-500 font-medium">
+            Showing <span className="text-slate-800 font-bold">{Math.min(filteredData.length, (currentPage - 1) * itemsPerPage + 1)}</span> to{" "}
+            <span className="text-slate-800 font-bold">{Math.min(filteredData.length, currentPage * itemsPerPage)}</span> of{" "}
+            <span className="text-slate-800 font-bold">{filteredData.length}</span> records
+          </p>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+
       </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/calendar.svg" alt="" width={20} height={20} className="opacity-70" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Total Sessions</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalSessions}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/check-circle.svg" alt="" width={20} height={20} className="opacity-70" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Present</p>
-              <p className="text-2xl font-bold text-green-600">{stats.present}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/x-circle.svg" alt="" width={20} height={20} className="opacity-70" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Absent</p>
-              <p className="text-2xl font-bold text-red-600">{stats.absent}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/percent.svg" alt="" width={20} height={20} className="opacity-70" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Rate</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.percentage}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Attendance Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-sm font-bold text-gray-900">All Records</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Course</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Time</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Location</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Method</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {attendanceHistory.map((record, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{record.date}</td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-semibold text-gray-900">{record.course}</p>
-                    <p className="text-xs text-gray-600">{record.name}</p>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.time}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.location}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                      {record.method}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      record.status === 'present' ? 'bg-green-100 text-green-800' :
-                      record.status === 'online' ? 'bg-blue-100 text-blue-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {record.status === 'present' && <Image src="/dashboard-icons/check-circle.svg" alt="" width={12} height={12} />}
-                      {record.status === 'online' && <Image src="/dashboard-icons/info.svg" alt="" width={12} height={12} />}
-                      {record.status === 'absent' && <Image src="/dashboard-icons/x-circle.svg" alt="" width={12} height={12} />}
-                      {record.status === 'present' ? 'Present' : record.status === 'online' ? 'Online' : 'Absent'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

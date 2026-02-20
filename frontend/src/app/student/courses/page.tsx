@@ -1,89 +1,135 @@
-import Image from "next/image";
-import Link from "next/link";
+"use client";
+
+import React, { useState } from "react";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { BookOpen, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { COURSES_DATA, Course } from "@/lib/demodata";
 
 export default function StudentCourses() {
-  const courses = [
-    { code: "CSC 301", name: "Data Structures & Algorithms", lecturer: "Dr. Mensah Yaw", units: 3, attendance: 92, schedule: "Mon, Wed 10:00 AM", location: "Lecture Hall A" },
-    { code: "CSC 305", name: "Database Systems", lecturer: "Dr. Sarah Chen", units: 3, attendance: 88, schedule: "Tue, Thu 2:00 PM", location: "Lab Building" },
-    { code: "CSC 320", name: "Web Development", lecturer: "Prof. James Wilson", units: 4, attendance: 85, schedule: "Wed, Fri 4:00 PM", location: "Computer Lab 2" },
-    { code: "GEDS 400", name: "Entrepreneurship", lecturer: "Dr. Michael Brown", units: 2, attendance: 68, schedule: "Mon 12:00 PM", location: "Business Hall" },
-    { code: "MTH 202", name: "Linear Algebra", lecturer: "Dr. Emily Davis", units: 3, attendance: 90, schedule: "Tue, Thu 10:00 AM", location: "Math Building" },
-  ];
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate network fetch
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const getStatusColor = (status: Course["status"]) => {
+    switch (status) {
+      case "safe": return "bg-emerald-500";
+      case "warning": return "bg-amber-500";
+      case "critical": return "bg-red-500";
+      default: return "bg-slate-500";
+    }
+  };
+
+  const getStatusBadge = (status: Course["status"]) => {
+    switch (status) {
+      case "safe": return <Badge variant="success" className="gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Good Standing</Badge>;
+      case "warning": return <Badge variant="warning" className="gap-1"><AlertTriangle className="w-3.5 h-3.5" /> At Risk</Badge>;
+      case "critical": return <Badge variant="danger" className="gap-1"><AlertTriangle className="w-3.5 h-3.5" /> Probation</Badge>;
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <DashboardLayout role="student">
+      <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
-          <p className="text-gray-600 mt-1">Semester 2, 2025/2026 Academic Session</p>
+          <h1 className="text-2xl font-bold font-display text-slate-900">My Courses</h1>
+          <p className="text-slate-500 mt-1">View your registered courses and track your attendance progress.</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-medium text-gray-600">Total Units</p>
-          <p className="text-2xl font-bold text-gray-900">15</p>
-        </div>
-      </div>
 
-      {/* Courses Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => (
-          <div key={course.code} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-            {/* Color Bar */}
-            <div className={`h-2 ${course.attendance >= 75 ? 'bg-blue-600' : 'bg-red-500'}`}></div>
-            
-            {/* Content */}
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-md mb-2">
-                    {course.code}
-                  </span>
-                  <h3 className="font-bold text-gray-900">{course.name}</h3>
-                </div>
-                <span className="text-xs text-gray-500">{course.units} Units</span>
-              </div>
-
-              {/* Lecturer */}
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                <Image src="/dashboard-icons/user.svg" alt="" width={16} height={16} className="opacity-50" />
-                <span>{course.lecturer}</span>
-              </div>
-
-              {/* Schedule */}
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                <Image src="/dashboard-icons/clock.svg" alt="" width={16} height={16} className="opacity-50" />
-                <span>{course.schedule}</span>
-              </div>
-
-              {/* Location */}
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-                <Image src="/dashboard-icons/map-pin.svg" alt="" width={16} height={16} className="opacity-50" />
-                <span>{course.location}</span>
-              </div>
-
-              {/* Attendance Progress */}
-              <div className="pt-4 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-600">Attendance</span>
-                  <span className={`text-sm font-bold ${course.attendance >= 75 ? 'text-green-600' : 'text-red-600'}`}>
-                    {course.attendance}%
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${course.attendance >= 75 ? 'bg-green-500' : 'bg-red-500'}`}
-                    style={{ width: `${course.attendance}%` }}
-                  ></div>
-                </div>
-                {course.attendance < 75 && (
-                  <p className="text-xs text-red-600 mt-2 font-medium">⚠️ Below 75% threshold</p>
-                )}
-              </div>
-            </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-0 shadow-sm ring-1 ring-slate-200">
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-24" />
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-8 w-16" />
+                    </div>
+                    <div>
+                      <Skeleton className="h-2 w-full rounded-full" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        ))}
+        ) : COURSES_DATA.length === 0 ? (
+          <EmptyState
+            title="No Registered Courses"
+            description="You are currently not registered for any courses this semester. Please contact course registration."
+            icon="folder"
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {COURSES_DATA.map((course) => (
+              <Card key={course.id} className="border-0 shadow-sm ring-1 ring-slate-200 hover:shadow-md transition-shadow group">
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <BookOpen className="w-4 h-4 text-babcock-blue" />
+                        {course.code}
+                      </CardTitle>
+                      <CardDescription className="mt-1 line-clamp-1">{course.title}</CardDescription>
+                      <p className="text-xs text-slate-400 mt-2 font-medium">{course.instructor}</p>
+                    </div>
+                    <div className="shrink-0">{getStatusBadge(course.status)}</div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 group-hover:bg-blue-50/50 transition-colors">
+                    <div className="flex justify-between items-end mb-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Attendance</p>
+                        <p className="text-sm font-medium text-slate-700 mt-1">
+                          {course.attendedClasses} / {course.totalClasses} Classes
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold font-display text-slate-900">{course.attendancePercentage}%</span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden relative">
+                      {/* 75% Threshold Marker */}
+                      <div className="absolute top-0 bottom-0 left-[75%] w-0.5 bg-slate-400/50 z-10" title="75% Requirement Mark" />
+
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ease-out ${getStatusColor(course.status)}`}
+                        style={{ width: `${course.attendancePercentage}%` }}
+                      />
+                    </div>
+                    {course.attendancePercentage < 75 && (
+                      <p className="text-xs text-amber-600 mt-2 font-medium flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {75 - course.attendancePercentage}% short of required minimum
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

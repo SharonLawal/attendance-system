@@ -2,24 +2,9 @@
 
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Users, Activity, AlertTriangle, ShieldAlert, Edit2, Trash2, Search, Filter, MoreVertical, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, Edit2, Trash2, Search, Filter, MoreVertical } from "lucide-react";
 
-// Mock Data
-const STATS = [
-  { title: "Total Students", value: "8,432", icon: Users, color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100" },
-  { title: "Active Sessions", value: "45", icon: Activity, color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100" },
-  { title: "System Health", value: "99.9%", icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50", border: "border-indigo-100" },
-  { title: "Flagged Absences", value: "112", icon: AlertTriangle, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" },
-];
-
-const USERS_DATA = [
-  { id: 1, name: "John Doe", identifier: "21/1234", role: "Student", status: "Active" },
-  { id: 2, name: "Dr. Jane Smith", identifier: "S-4001", role: "Lecturer", status: "Active" },
-  { id: 3, name: "Michael Johnson", identifier: "19/5432", role: "Student", status: "Suspended" },
-  { id: 4, name: "Sarah Williams", identifier: "22/8876", role: "Student", status: "Active" },
-  { id: 5, name: "Prof. Alan Turing", identifier: "S-1004", role: "Admin", status: "Active" },
-  { id: 6, name: "Emily Brown", identifier: "20/4455", role: "Student", status: "Inactive" },
-];
+import { ADMIN_STATS as STATS, ADMIN_USERS_DATA as USERS_DATA } from "@/lib/demodata";
 
 export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,16 +85,16 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-slate-600 font-mono text-sm">{user.identifier}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${user.role === 'Student' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
-                            user.role === 'Lecturer' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                              'bg-babcock-blue/10 text-babcock-blue border-babcock-blue/20'
+                          user.role === 'Lecturer' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                            'bg-babcock-blue/10 text-babcock-blue border-babcock-blue/20'
                           }`}>
                           {user.role}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${user.status === 'Active' ? 'text-emerald-700 bg-emerald-50' :
-                            user.status === 'Suspended' ? 'text-rose-700 bg-rose-50' :
-                              'text-slate-700 bg-slate-100'
+                          user.status === 'Suspended' ? 'text-rose-700 bg-rose-50' :
+                            'text-slate-700 bg-slate-100'
                           }`}>
                           {user.status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                           {user.status === 'Suspended' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>}
@@ -136,7 +121,7 @@ export default function AdminDashboard() {
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                       <ShieldAlert className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                      <p>No users found matching "{searchTerm}"</p>
+                      <p>No users found matching &quot;{searchTerm}&quot;</p>
                     </td>
                   </tr>
                 )}
