@@ -29,6 +29,14 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
     },
+    department: {
+        type: String,
+    },
+    accountStatus: {
+        type: String,
+        enum: ['Active', 'Suspended', 'Inactive'],
+        default: 'Active',
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

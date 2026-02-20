@@ -16,6 +16,7 @@ import { LECTURER_COURSES, DETAILED_REPORTS } from "@/lib/demodata";
 
 
 export default function LecturerReports() {
+    const [filterCourse, setFilterCourse] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);

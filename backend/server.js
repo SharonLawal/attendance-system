@@ -9,6 +9,10 @@ const authRoutes = require('./src/routes/authRoutes');
 const sessionRoutes = require('./src/routes/sessionRoutes');
 const attendanceRoutes = require('./src/routes/attendanceRoutes');
 const lmsRoutes = require('./src/routes/lmsRoutes');
+const studentRoutes = require('./src/routes/studentRoutes');
+const lecturerRoutes = require('./src/routes/lecturerRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
+const analyticsRoutes = require('./src/routes/analyticsRoutes');
 
 // Connect to Database
 connectDB();
@@ -25,6 +29,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/lms', lmsRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/lecturer', lecturerRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Base Route
 app.get('/', (req, res) => {
