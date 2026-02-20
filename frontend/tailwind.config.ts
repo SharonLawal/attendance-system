@@ -14,6 +14,10 @@ const config: Config = {
           light: "#1e5dd8",
           dark: "#0a3a95",
         },
+        babcock: {
+          blue: "#003366",
+          gold: "#FBBF24",
+        },
         accent: {
           DEFAULT: "#FFC107", // Amber Gold
           light: "#FFD54F",

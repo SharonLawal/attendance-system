@@ -1,265 +1,186 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import React, { useState, useEffect } from "react";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { MapPin, Navigation, AlertCircle, CheckCircle2, XCircle, Clock, ShieldCheck } from "lucide-react";
+
+// Mock Data
+const MOCK_ATTENDANCE_PERCENTAGE = 68;
+const COURSE_CODE = "GEDS 400";
+const RECENT_HISTORY = [
+  { id: 1, course: "GEDS 400", date: "Oct 24, 2023", time: "10:15 AM", status: "Present" },
+  { id: 2, course: "COSC 412", date: "Oct 23, 2023", time: "08:05 AM", status: "Late" },
+  { id: 3, course: "CPEN 414", date: "Oct 22, 2023", time: "09:00 AM", status: "Present" },
+  { id: 4, course: "GEDS 400", date: "Oct 17, 2023", time: "10:00 AM", status: "Absent" },
+];
 
 export default function StudentDashboard() {
-  const [otc, setOtc] = useState("");
+  const [otc, setOtc] = useState(["", "", "", "", "", ""]);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [notification, setNotification] = useState<{type: 'success' | 'error' | 'warning', message: string} | null>(null);
+  const [gpsSamples, setGpsSamples] = useState(0);
 
-  // Student data (from API in production)
-  const studentData = {
-    name: "Sharon Lawal",
-    matricNumber: "22/0234",
-    totalClasses: 48,
-    attendanceRate: 87.5,
-    classesAttended: 42,
-    classesToday: { attended: 2, total: 3 },
-    lowAttendanceCourses: ["GEDS 400"] // Below 75%
-  };
-
-  // Active session (from API)
-  const activeSession = {
-    isActive: true,
-    courseCode: "CSC 301",
-    courseName: "Data Structures & Algorithms",
-    lecturer: "Dr. Mensah Yaw",
-    location: "Lecture Hall A, Engineering Block",
-    startTime: "10:00 AM",
-    endTime: "11:30 AM",
-    timeRemaining: "14:52"
-  };
-
-  // Recent attendance
-  const recentAttendance = [
-    { course: "CSC 305", name: "Database Systems", date: "Feb 4, 2026", time: "2:05 PM", status: "present" },
-    { course: "CSC 320", name: "Web Development", date: "Feb 3, 2026", time: "4:10 PM", status: "present" },
-    { course: "CSC 301", name: "Data Structures", date: "Feb 3, 2026", time: "10:03 AM", status: "present" },
-    { course: "GEDS 400", name: "Entrepreneurship", date: "Feb 2, 2026", time: "-", status: "absent" },
-  ];
-
-  const handleSubmitOTC = async () => {
-    if (otc.length !== 4) {
-      setNotification({ type: 'error', message: 'Please enter a valid 4-digit code' });
-      return;
+  // Mock taking multiple GPS samples
+  useEffect(() => {
+    if (isVerifying && gpsSamples < 5) {
+      const timer = setTimeout(() => {
+        setGpsSamples(prev => prev + 1);
+      }, 800);
+      return () => clearTimeout(timer);
+    } else if (isVerifying && gpsSamples === 5) {
+      setTimeout(() => {
+        setIsVerifying(false);
+        setGpsSamples(0);
+        alert("Attendance verified successfully!");
+      }, 500);
     }
+  }, [isVerifying, gpsSamples]);
 
-    setIsVerifying(true);
-    setNotification(null);
+  const handleOtcChange = (index: number, value: string) => {
+    // Convert to uppercase for alphanumeric OTC
+    const upperValue = value.toUpperCase();
+    if (upperValue.length <= 1 && /^[A-Z0-9]*$/.test(upperValue)) {
+      const newOtc = [...otc];
+      newOtc[index] = upperValue;
+      setOtc(newOtc);
 
-    // Simulate GPS verification + OTC validation
-    setTimeout(() => {
-      const isValid = Math.random() > 0.2;
-      
-      if (isValid) {
-        setNotification({ 
-          type: 'success', 
-          message: '✓ Attendance marked successfully! Location verified in Lecture Hall A.' 
-        });
-        setOtc("");
-      } else {
-        setNotification({ 
-          type: 'error', 
-          message: '✗ Verification failed. Code incorrect or you are outside the geofence area.' 
-        });
+      // Auto-focus next input
+      if (upperValue && index < 5) {
+        const nextInput = document.getElementById(`otc-${index + 1}`);
+        nextInput?.focus();
       }
-      setIsVerifying(false);
-    }, 2000);
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otc[index] && index > 0) {
+      const prevInput = document.getElementById(`otc-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otc.every(digit => digit !== "")) {
+      setIsVerifying(true);
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back, Sharon!</h1>
-        <p className="text-gray-600 mt-1">Here's your attendance overview for today.</p>
-      </div>
+    <DashboardLayout role="student">
+      <div className="space-y-6">
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Total Classes */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/book.svg" alt="" width={24} height={24} className="opacity-70" />
-            </div>
-            <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700">
-              Active
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Total Classes</p>
-          <p className="text-3xl font-bold text-gray-900">{studentData.totalClasses}</p>
-          <p className="text-xs text-gray-500 mt-1">This semester</p>
-        </div>
-
-        {/* Attendance Rate */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/check-circle.svg" alt="" width={24} height={24} className="opacity-70" />
-            </div>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-              studentData.attendanceRate >= 75 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-            }`}>
-              {studentData.attendanceRate >= 75 ? 'Good' : 'Low'}
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Attendance Rate</p>
-          <p className="text-3xl font-bold text-gray-900">{studentData.attendanceRate}%</p>
-          <p className="text-xs text-gray-500 mt-1">Overall average</p>
-        </div>
-
-        {/* Classes Attended */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/check-circle.svg" alt="" width={24} height={24} className="opacity-70" />
-            </div>
-            <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-              Total
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Classes Attended</p>
-          <p className="text-3xl font-bold text-gray-900">{studentData.classesAttended}</p>
-          <p className="text-xs text-gray-500 mt-1">Out of {studentData.totalClasses}</p>
-        </div>
-
-        {/* Today's Progress */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-              <Image src="/dashboard-icons/calendar.svg" alt="" width={24} height={24} className="opacity-70" />
-            </div>
-            <span className="text-xs font-medium px-2 py-1 rounded-full bg-purple-100 text-purple-700">
-              Today
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Today's Classes</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {studentData.classesToday.attended}
-            <span className="text-lg font-normal text-gray-400">/{studentData.classesToday.total}</span>
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Attended so far</p>
-        </div>
-      </div>
-
-      {/* 75% Warning Banner (Requirement 4.5 from document) */}
-      {studentData.lowAttendanceCourses.length > 0 && (
-        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Image src="/dashboard-icons/warning.svg" alt="" width={24} height={24} className="text-amber-600 flex-shrink-0 mt-0.5" />
+        {/* Warning System */}
+        {MOCK_ATTENDANCE_PERCENTAGE < 75 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-bold text-amber-900 mb-1">⚠️ Attendance Warning</h4>
-              <p className="text-sm text-amber-800">
-                Your attendance in <strong>GEDS 400 (Entrepreneurship)</strong> is below the required 75% threshold. 
-                Please attend your next classes to meet university requirements for exam eligibility.
+              <h3 className="text-red-800 font-semibold text-sm">Attendance Warning</h3>
+              <p className="text-red-700 text-sm mt-1">
+                Warning: {COURSE_CODE} attendance is at {MOCK_ATTENDANCE_PERCENTAGE}%. Minimum required is 75%.
               </p>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Mark Attendance Card (Primary Feature - Chapter 3.4.1.1) */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-bold">Mark Attendance</h3>
-                  <p className="text-blue-100 text-sm mt-1">
-                    {activeSession.courseCode}: {activeSession.courseName}
-                  </p>
-                </div>
-                {activeSession.isActive && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                    Active Now
-                  </span>
-                )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Hero Card for Attendance */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden h-full">
+              {/* Decorative Background */}
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <ShieldCheck className="w-48 h-48 text-babcock-blue" />
               </div>
-              <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <Image src="/dashboard-icons/clock.svg" alt="" width={16} height={16} className="brightness-0 invert" />
-                  <span>{activeSession.startTime} - {activeSession.endTime}</span>
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6 w-full">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-800 font-display">Mark Attendance</h2>
+                    <p className="text-slate-500 mt-1">Enter the 6-digit code provided by your lecturer</p>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-200">
+                    <MapPin className="w-4 h-4" />
+                    GPS Active
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Image src="/dashboard-icons/map-pin.svg" alt="" width={16} height={16} className="brightness-0 invert" />
-                  <span>{activeSession.location}</span>
-                </div>
+
+                <form onSubmit={handleSubmit} className="mt-8 max-w-sm">
+                  <div className="flex gap-4 mb-8">
+                    {otc.map((digit, index) => (
+                      <input
+                        key={index}
+                        id={`otc-${index}`}
+                        type="text"
+                        inputMode="text"
+                        value={digit}
+                        onChange={(e) => handleOtcChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        disabled={isVerifying}
+                        className="w-16 h-20 text-center text-4xl font-bold rounded-xl border-2 border-slate-200 bg-slate-50 text-babcock-blue focus:border-babcock-blue focus:ring-4 focus:ring-babcock-blue/20 transition-all outline-none disabled:opacity-50"
+                        maxLength={1}
+                        required
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isVerifying || !otc.every(d => d)}
+                    className="w-full bg-babcock-blue hover:bg-opacity-90 text-white font-semibold py-4 rounded-xl shadow-lg shadow-babcock-blue/30 transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isVerifying ? (
+                      <>
+                        <Navigation className="w-5 h-5 animate-spin" />
+                        Verifying Location...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-5 h-5 group-hover:block hidden transition-all" />
+                        Verify Location & Submit
+                      </>
+                    )}
+                  </button>
+
+                  {/* Logic UI Indicator */}
+                  <div className="mt-4 h-12">
+                    {isVerifying ? (
+                      <div className="flex flex-col items-center justify-center text-sm text-slate-500 animate-pulse">
+                        <div className="flex gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map((dot) => (
+                            <div
+                              key={dot}
+                              className={`h-1.5 rounded-full transition-all duration-300 ${dot <= gpsSamples ? 'w-4 bg-babcock-gold' : 'w-1.5 bg-slate-200'}`}
+                            />
+                          ))}
+                        </div>
+                        <span>Averaging GPS coordinates ({gpsSamples}/5 samples)...</span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 text-center">
+                        Location will be verified against the classroom boundary boundary.
+                      </p>
+                    )}
+                  </div>
+                </form>
               </div>
             </div>
+          </div>
 
-            {/* Form */}
-            <div className="p-8">
-              {/* Notification */}
-              {notification && (
-                <div className={`mb-6 p-4 rounded-lg border ${
-                  notification.type === 'success' ? 'bg-green-50 border-green-200' :
-                  notification.type === 'error' ? 'bg-red-50 border-red-200' :
-                  'bg-amber-50 border-amber-200'
-                }`}>
-                  <p className={`text-sm font-medium ${
-                    notification.type === 'success' ? 'text-green-800' :
-                    notification.type === 'error' ? 'text-red-800' :
-                    'text-amber-800'
-                  }`}>
-                    {notification.message}
-                  </p>
-                </div>
-              )}
+          <div className="lg:col-span-1">
+            <div className="bg-babcock-blue rounded-2xl border border-blue-900 shadow-sm p-6 text-white h-full relative overflow-hidden">
+              {/* Decorative Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+              <div className="relative z-10">
+                <h3 className="text-lg font-semibold font-display mb-1 text-slate-100">Quick Stats</h3>
+                <p className="text-blue-200 text-sm mb-6">Current Semester overview</p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Enter One-Time Code (OTC)
-                  </label>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Enter the 4-digit code displayed by your lecturer
-                  </p>
-                  <input
-                    type="text"
-                    value={otc}
-                    onChange={(e) => setOtc(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="0000"
-                    maxLength={4}
-                    className="w-full px-6 py-4 text-center text-3xl font-bold tracking-[0.5em] border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
-                    disabled={isVerifying}
-                  />
-                </div>
-
-                <button
-                  onClick={handleSubmitOTC}
-                  disabled={isVerifying || otc.length !== 4}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  {isVerifying ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Verifying Location...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Verify & Submit Attendance</span>
-                      <Image src="/dashboard-icons/arrow-right.svg" alt="" width={20} height={20} className="brightness-0 invert" />
-                    </>
-                  )}
-                </button>
-
-                {/* Info Box */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Image src="/dashboard-icons/info.svg" alt="" width={20} height={20} className="flex-shrink-0 mt-0.5 opacity-70" />
-                    <div className="text-sm text-blue-800">
-                      <p className="font-medium mb-1">🛰️ Location verification enabled</p>
-                      <p className="text-blue-700">
-                        Your GPS coordinates will be verified (3-5 samples). Time remaining: <strong>{activeSession.timeRemaining}</strong>
-                      </p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="bg-white/10 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
+                    <p className="text-blue-100 text-sm">Overall Attendance</p>
+                    <p className="text-3xl font-bold text-white mt-1 select-all">84%</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
+                    <p className="text-blue-100 text-sm">Classes Attended</p>
+                    <p className="text-3xl font-bold text-white mt-1">42 <span className="text-lg text-blue-200 font-normal">/ 50</span></p>
                   </div>
                 </div>
               </div>
@@ -267,102 +188,52 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Upcoming Classes Sidebar */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Today's Schedule</h3>
-          
-          <div className="space-y-3">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-green-700">10:00 AM</span>
-                <span className="text-xs font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded">Active</span>
-              </div>
-              <p className="font-bold text-gray-900 text-sm">CSC 301</p>
-              <p className="text-xs text-gray-600">Data Structures</p>
-              <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
-                <Image src="/dashboard-icons/map-pin.svg" alt="" width={12} height={12} className="opacity-50" />
-                <span>Lecture Hall A</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-gray-600">2:00 PM</span>
-                <span className="text-xs font-medium px-2 py-0.5 bg-gray-200 text-gray-700 rounded">Later</span>
-              </div>
-              <p className="font-bold text-gray-900 text-sm">CSC 305</p>
-              <p className="text-xs text-gray-600">Database Systems</p>
-              <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
-                <Image src="/dashboard-icons/map-pin.svg" alt="" width={12} height={12} className="opacity-50" />
-                <span>Lab Building</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-gray-600">4:00 PM</span>
-                <span className="text-xs font-medium px-2 py-0.5 bg-gray-200 text-gray-700 rounded">Later</span>
-              </div>
-              <p className="font-bold text-gray-900 text-sm">CSC 320</p>
-              <p className="text-xs text-gray-600">Web Development</p>
-              <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
-                <Image src="/dashboard-icons/map-pin.svg" alt="" width={12} height={12} className="opacity-50" />
-                <span>Computer Lab 2</span>
-              </div>
-            </div>
+        {/* Recent History Table */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="text-lg font-bold text-slate-800 font-display flex items-center gap-2">
+              <Clock className="w-5 h-5 text-babcock-gold" />
+              Recent History
+            </h3>
+            <button className="text-sm font-medium text-babcock-blue hover:text-blue-800 transition-colors">
+              View All
+            </button>
           </div>
-
-          <Link 
-            href="/student/schedule" 
-            className="block w-full mt-4 text-center text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            View Full Schedule →
-          </Link>
-        </div>
-      </div>
-
-      {/* Recent Attendance History */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-gray-900">Recent Attendance</h3>
-          <Link href="/student/history" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-            View All →
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Course</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Time</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {recentAttendance.map((record, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-gray-900 text-sm">{record.course}</p>
-                    <p className="text-xs text-gray-600">{record.name}</p>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.date}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.time}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      record.status === 'present' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {record.status === 'present' ? 'Present' : 'Absent'}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                  <th className="font-semibold px-6 py-4">Course</th>
+                  <th className="font-semibold px-6 py-4">Date</th>
+                  <th className="font-semibold px-6 py-4">Time</th>
+                  <th className="font-semibold px-6 py-4 text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {RECENT_HISTORY.map((record) => (
+                  <tr key={record.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-slate-900">{record.course}</td>
+                    <td className="px-6 py-4 text-slate-500">{record.date}</td>
+                    <td className="px-6 py-4 text-slate-500">{record.time}</td>
+                    <td className="px-6 py-4 text-right flex justify-end">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${record.status === "Present" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                        record.status === "Late" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                          "bg-red-50 text-red-700 border border-red-200"
+                        }`}>
+                        {record.status === "Present" && <CheckCircle2 className="w-3 h-3" />}
+                        {record.status === "Late" && <AlertCircle className="w-3 h-3" />}
+                        {record.status === "Absent" && <XCircle className="w-3 h-3" />}
+                        {record.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
