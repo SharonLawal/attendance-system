@@ -22,10 +22,10 @@ export function Navbar() {
         </div>
         
         <div className="flex items-center gap-4">
-          <Link className="hidden sm:block text-sm font-bold text-white hover:text-yellow-400 transition-colors" href="/auth/login">
+          <Link className="hidden sm:block text-sm font-bold text-white hover:text-yellow-400 transition-colors" href="/login">
             Log In
           </Link>
-          <Link href="/auth/signup">
+          <Link href="/signup">
             <button className="h-10 px-5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-bold transition-all shadow-[0_0_15px_rgba(15,73,189,0.5)] flex items-center gap-2">
               Get Started
               <ArrowRight size={16} />
