@@ -15,10 +15,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { loginSchema, LoginFormData } from "@/lib/validations/auth";
-import { login } from "@/lib/auth-utils";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -34,6 +35,7 @@ export default function LoginPage() {
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -42,17 +44,16 @@ export default function LoginPage() {
     setServerError("");
 
     try {
-      const result = await login(data);
+      const result = await login(data.email, data.password, data.rememberMe);
 
-      if (result.success && result.role) {
-        if (result.role === "Student") router.push("/student/dashboard");
-        if (result.role === "Lecturer") router.push("/lecturer/dashboard");
-        if (result.role === "Admin") router.push("/admin/dashboard");
-      } else {
-        setServerError(result.message);
+      // Form redirect logic is now handled automatically by the app's middleware.ts
+      // which detects the new httpOnly access cookie and routes based on User Role.
+      // But we can forcibly redirect them to the root so the middleware catches them immediately:
+      if (result) {
+        window.location.href = "/";
       }
-    } catch (error) {
-      setServerError("An unexpected error occurred. Please try again.");
+    } catch (error: any) {
+      setServerError(error.response?.data?.message || "Invalid credentials or network error.");
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +160,7 @@ export default function LoginPage() {
                     Password
                   </label>
                   <Link
-                    href="#"
+                    href="/forgot-password"
                     className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
                   >
                     Forgot Password?
@@ -191,6 +192,20 @@ export default function LoginPage() {
                 )}
               </div>
 
+              <div className="flex justify-between items-center mt-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    {...register("rememberMe")}
+                    type="checkbox"
+                    id="rememberMe"
+                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/20 transition-all cursor-pointer"
+                  />
+                  <label htmlFor="rememberMe" className="text-sm text-slate-600 font-medium cursor-pointer select-none">
+                    Remember me
+                  </label>
+                </div>
+              </div>
+
               <button
                 disabled={isLoading}
                 type="submit"
@@ -214,7 +229,7 @@ export default function LoginPage() {
                   href="/signup"
                   className="font-bold text-primary hover:underline transition-all"
                 >
-                  Create Student Account
+                  Create Account
                 </Link>
               </p>
             </div>

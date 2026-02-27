@@ -8,14 +8,23 @@ const babcockEmailRule = z
     message: "You must use a valid Babcock University email (@babcock.edu.ng)",
   });
 
-const passwordRule = z
+const signupPasswordRule = z
   .string()
-  .min(6, "Password must be at least 6 characters");
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[\W_]/, "Password must contain at least one special character");
+
+const loginPasswordRule = z
+  .string()
+  .min(1, "Password is required");
 
 // --- Login Schema ---
 export const loginSchema = z.object({
   email: babcockEmailRule,
-  password: passwordRule,
+  password: loginPasswordRule,
+  rememberMe: z.boolean().optional().default(false),
 });
 
 // --- Signup Schema ---
@@ -27,8 +36,8 @@ export const signupSchema = z
     role: z.enum(["Student", "Lecturer"], {
       message: "Please select a valid role",
     }),
-    password: passwordRule,
-    confirmPassword: passwordRule,
+    password: signupPasswordRule,
+    confirmPassword: signupPasswordRule,
     terms: z.literal(true, {
       message: "You must accept the terms and conditions",
     }),

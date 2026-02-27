@@ -34,10 +34,10 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
   // 1. Validate Email Domain (Babcock Constraint)
-  if (!credentials.email.endsWith("@babcock.edu.ng")) {
+  if (!credentials.email.endsWith("@babcock.edu.ng") && !credentials.email.endsWith("@student.babcock.edu.ng")) {
     return {
       success: false,
-      message: "Access denied. Please use your official Babcock email (@babcock.edu.ng).",
+      message: "Access denied. Please use your official Babcock email (@babcock.edu.ng or @student.babcock.edu.ng).",
     };
   }
 
@@ -79,7 +79,7 @@ export const signup = async (data: SignupData): Promise<AuthResponse> => {
     };
   }
 
-  if (!data.email.endsWith("@babcock.edu.ng")) {
+  if (!data.email.endsWith("@babcock.edu.ng") && !data.email.endsWith("@student.babcock.edu.ng")) {
     return {
       success: false,
       message: "Registration is restricted to Babcock University emails only.",

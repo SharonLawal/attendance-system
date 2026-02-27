@@ -19,10 +19,12 @@ import {
 } from "lucide-react";
 import { signupSchema, SignupFormData } from "@/lib/validations/auth";
 import { signup } from "@/lib/auth-utils";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
 export default function SignupPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
@@ -41,11 +43,12 @@ export default function SignupPage() {
       role: "Student",
       password: "",
       confirmPassword: "",
-      terms: true,
+      terms: false,
     },
   });
 
   const selectedRole = watch("role");
+  const watchPassword = watch("password");
 
   const getIDLabel = () =>
     selectedRole === "Student" ? "Matriculation Number" : "Staff ID Number";
@@ -62,7 +65,7 @@ export default function SignupPage() {
         studentId: data.idNumber,
       });
       if (result.success) {
-        router.push("/login");
+        router.push("/verify-email?email=" + encodeURIComponent(data.email));
       } else {
         setServerError(result.message);
       }
@@ -153,8 +156,8 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setValue("role", role)}
                     className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${selectedRole === role
-                        ? "bg-white text-primary shadow-sm border border-slate-200"
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                      ? "bg-white text-primary shadow-sm border border-slate-200"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                       }`}
                   >
                     {role}
@@ -265,6 +268,7 @@ export default function SignupPage() {
                     {errors.password.message}
                   </p>
                 )}
+                <PasswordStrengthIndicator password={watchPassword} />
               </div>
 
               <div className="space-y-1.5">
@@ -278,10 +282,17 @@ export default function SignupPage() {
                   />
                   <input
                     {...register("confirmPassword")}
-                    type={showPassword ? "text" : "password"}
+                    type={showConfirmPassword ? "text" : "password"}
                     className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.confirmPassword ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
                     placeholder="Repeat password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 {errors.confirmPassword && (
                   <p className="text-xs text-red-500 font-medium ml-1">
