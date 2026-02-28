@@ -10,11 +10,6 @@ const otpLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Key by IP + email to prevent abuse
-    keyGenerator: (req) => {
-        const email = req.body.email || 'no-email';
-        return `${req.ip}-${email}`;
-    },
 });
 
 // Rate limiter for Password Reset requests
@@ -27,10 +22,6 @@ const passwordResetLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => {
-        const email = req.body.email || 'no-email';
-        return `${req.ip}-${email}`;
-    },
 });
 
 module.exports = {

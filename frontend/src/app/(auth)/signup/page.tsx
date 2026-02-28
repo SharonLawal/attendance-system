@@ -18,11 +18,12 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { signupSchema, SignupFormData } from "@/lib/validations/auth";
-import { signup } from "@/lib/auth-utils";
+import { useAuth } from "@/context/AuthContext";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { register: registerUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,17 +61,16 @@ export default function SignupPage() {
     setServerError("");
 
     try {
-      const result = await signup({
-        ...data,
-        studentId: data.idNumber,
+      await registerUser({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        universityId: data.idNumber,
       });
-      if (result.success) {
-        router.push("/verify-email?email=" + encodeURIComponent(data.email));
-      } else {
-        setServerError(result.message);
-      }
-    } catch (error) {
-      setServerError("An unexpected error occurred.");
+      router.push("/verify-email?email=" + encodeURIComponent(data.email));
+    } catch (error: any) {
+      setServerError(error.response?.data?.message || "An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }

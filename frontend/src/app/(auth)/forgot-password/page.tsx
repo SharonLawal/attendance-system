@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Mail, ArrowLeft, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
+import apiClient from "@/lib/axios";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -28,11 +29,10 @@ export default function ForgotPasswordPage() {
         }
 
         try {
-            // Simulate API call to send reset link
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await apiClient.post('/api/auth/forgot-password', { email });
             setIsSuccess(true);
-        } catch (err) {
-            setError("An unexpected error occurred. Please try again.");
+        } catch (err: any) {
+            setError(err.response?.data?.message || "An unexpected error occurred. Please try again.");
         } finally {
             setIsLoading(false);
         }
