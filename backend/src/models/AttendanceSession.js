@@ -14,7 +14,7 @@ const attendanceSessionSchema = new mongoose.Schema({
     otcCode: {
         type: String,
         required: true,
-        match: [/^\d{4}$/, 'OTC Code must be exactly 4 digits'],
+        match: [/^\d{6}$/, 'OTC Code must be exactly 6 digits'],
     },
     startTime: {
         type: Date,

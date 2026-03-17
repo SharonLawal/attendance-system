@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/Breadcrumb";
+import { useAuth } from "@/context/AuthContext";
 
 type RoleType = "student" | "lecturer" | "admin";
 
@@ -57,6 +58,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const pathname = usePathname();
     const navItems = roleNavItems[role];
+    const { user, logout } = useAuth();
 
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -158,15 +160,17 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                 <div className="p-4 mt-auto">
                     <div className="bg-white/5 rounded-lg p-4 flex flex-col gap-3 border border-white/10">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 text-white font-bold">
-                                JD
+                            <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 text-white font-bold uppercase">
+                                {user?.fullName?.substring(0, 2) || "NA"}
                             </div>
                             <div className="overflow-hidden">
-                                <p className="text-sm font-medium text-white truncate">John Doe</p>
-                                <p className="text-xs text-white/60 truncate">ID: 21/1234</p>
+                                <p className="text-sm font-medium text-white truncate">{user?.fullName || "User Name"}</p>
+                                <p className="text-xs text-white/60 truncate">ID: {user?.universityId || "N/A"}</p>
                             </div>
                         </div>
-                        <button className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-slate-300 transition-colors text-sm font-medium mt-1">
+                        <button
+                            onClick={() => logout()}
+                            className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-slate-300 transition-colors text-sm font-medium mt-1">
                             <LogOut className="w-4 h-4" />
                             Sign Out
                         </button>

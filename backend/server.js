@@ -12,6 +12,7 @@ const attendanceRoutes = require('./src/routes/attendanceRoutes');
 const lmsRoutes = require('./src/routes/lmsRoutes');
 const studentRoutes = require('./src/routes/studentRoutes');
 const lecturerRoutes = require('./src/routes/lecturerRoutes');
+const courseRoutes = require('./src/routes/courseRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ extended: false }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/courses', courseRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/lms', lmsRoutes);
 app.use('/api/student', studentRoutes);

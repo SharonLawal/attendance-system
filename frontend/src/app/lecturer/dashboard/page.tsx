@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Play, Square, Clock, Map as MapIcon, RefreshCcw, CheckCircle2, ChevronRight, Pause, Plus, ShieldAlert } from "lucide-react";
+import { Play, Square, Clock, Map as MapIcon, RefreshCcw, CheckCircle2, ChevronRight, Pause, Plus, ShieldAlert, BookOpen, Edit, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -10,20 +10,51 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { toast } from "sonner";
-import { CLASSROOM_LOCATIONS, LECTURER_COURSES } from "@/lib/demodata";
+import { CLASSROOM_LOCATIONS } from "@/lib/demodata";
+import apiClient from "@/lib/axios";
+import { CreateCourseModal } from "@/components/lecturer/CreateCourseModal";
+import { EditCourseModal } from "@/components/lecturer/EditCourseModal";
+import { ManageCourseModal } from "@/components/lecturer/ManageCourseModal";
 
 export default function LecturerDashboard() {
   const [sessionActive, setSessionActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [otc, setOtc] = useState("");
+  const [activeSessionId, setActiveSessionId] = useState("");
   const [checkedInCount, setCheckedInCount] = useState(0);
   const totalStudentsInClass = 45; // Hardcoded mock for GEDS 400
 
+  // Course Data State
+  const [courses, setCourses] = useState<any[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [courseToEdit, setCourseToEdit] = useState<any>(null);
+  const [courseToManage, setCourseToManage] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [sessionDuration, setSessionDuration] = useState("5");
+
+  // Fetch Teacher's Courses
+  const fetchCourses = async () => {
+    try {
+      setIsLoadingCourses(true);
+      const res = await apiClient.get('/api/courses/my-courses');
+      setCourses(res.data.data || []);
+    } catch (error) {
+      toast.error("Failed to fetch courses.");
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
   // Timer & Polling Simulation
   useEffect(() => {
@@ -58,62 +89,181 @@ export default function LecturerDashboard() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const handleCreateSession = () => {
+  const handleCreateSession = async () => {
     if (!selectedCourse || !selectedLocation || parseInt(sessionDuration) < 5) return;
 
-    // Generate strict 6-char alphanumeric code
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
     }
 
-    setOtc(code);
-    setTimeLeft(parseInt(sessionDuration) * 60);
-    setCheckedInCount(0);
-    setSessionActive(true);
-    setIsCreateModalOpen(false);
-    toast.success("Attendance Session Started successfully!");
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+
+      const loc = CLASSROOM_LOCATIONS.find(l => l.id === selectedLocation);
+      const radius = loc ? (loc.capacity > 100 ? 50 : 25) : 50;
+
+      const res = await apiClient.post('/api/sessions/create', {
+        courseId: selectedCourse,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        radiusInMeters: radius,
+        durationInMinutes: parseInt(sessionDuration)
+      });
+
+      const data = res.data.data;
+      setOtc(data.otcCode);
+      setActiveSessionId(data.sessionId);
+      setTimeLeft(parseInt(sessionDuration) * 60);
+      setCheckedInCount(0);
+      setSessionActive(true);
+      setIsSessionModalOpen(false);
+
+      toast.success("Attendance Session Started successfully!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to start session. Ensure you have location permissions enabled.");
+    }
   };
 
-  const handleEndSession = () => {
-    setSessionActive(false);
-    toast.info("Active session has been closed.");
+  const handleEndSession = async () => {
+    try {
+      if (activeSessionId) {
+        await apiClient.post(`/api/lecturer/end-session/${activeSessionId}`);
+      }
+      setSessionActive(false);
+      setActiveSessionId("");
+      toast.info("Active session has been closed.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to end session cleanly.");
+      // Force local clean anyway to prevent getting stuck
+      setSessionActive(false);
+      setActiveSessionId("");
+    }
   };
 
-  const handleExtendSession = () => {
-    setTimeLeft(prev => prev + 300); // add 5 minutes
-    toast.success("Session extended by 5 minutes.");
+  const handleExtendSession = async () => {
+    try {
+      if (!activeSessionId) return;
+      await apiClient.post(`/api/lecturer/extend-session/${activeSessionId}`, { minutes: 5 });
+      setTimeLeft(prev => prev + 300); // add 5 minutes on the frontend clock
+      toast.success("Session extended by 5 minutes.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to extend session.");
+    }
   };
 
 
   return (
     <DashboardLayout role="lecturer">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-display text-slate-900">Lecturer Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-900 tracking-tight">Lecturer Dashboard</h1>
           <p className="text-slate-500 mt-1">Manage physical and hybrid attendance sessions.</p>
         </div>
         {!sessionActive && (
-          <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-            <Plus className="w-4 h-4" />
-            New Session
-          </Button>
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+            <Button variant="outline" onClick={() => setIsCreateModalOpen(true)} className="gap-2 bg-white flex-1 md:flex-none justify-center border-slate-300 hover:bg-slate-50 text-slate-700">
+              <Plus className="w-4 h-4" />
+              New Course
+            </Button>
+            <Button onClick={() => setIsSessionModalOpen(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 flex-1 md:flex-none justify-center shadow-md shadow-emerald-600/20">
+              <Play className="w-4 h-4 fill-current" />
+              Start Session
+            </Button>
+          </div>
         )}
       </div>
 
       {!sessionActive ? (
         <div className="w-full">
-          <EmptyState
-            title="No Active Session"
-            description="You do not have any classes currently running. Start a new session to begin taking attendance."
-            icon="calendar"
-            action={
-              <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4">
-                Start a Session Now
-              </Button>
-            }
-          />
+          {isLoadingCourses ? (
+            <div className="w-full py-20 flex flex-col items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-4 border-babcock-blue/30 border-t-babcock-blue animate-spin mb-4" />
+              <p className="text-slate-500 font-medium">Loading your courses...</p>
+            </div>
+          ) : courses.length === 0 ? (
+            <EmptyState
+              title="No Courses Found"
+              description="You have not created any courses yet. Create your first course to start tracking student attendance."
+              icon="calendar"
+              action={
+                <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Create First Course
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {courses.map((course) => (
+                <Card key={course._id} className="border-slate-200 hover:border-babcock-blue/50 hover:shadow-md transition-all group">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="neutral" className="bg-slate-100 text-slate-700">{course.courseCode}</Badge>
+                          {course.department && <span className="text-xs text-slate-400 font-medium px-2 py-0.5 bg-slate-50 rounded-full border border-slate-100">{course.department}</span>}
+                        </div>
+                        <h3 className="font-bold text-lg text-slate-900 line-clamp-1">{course.courseName}</h3>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-slate-400 hover:text-babcock-blue hover:bg-slate-100/50 rounded-full"
+                          title="Manage Roster"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCourseToManage(course);
+                            setIsManageModalOpen(true);
+                          }}
+                        >
+                          <Users className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-slate-400 hover:text-babcock-blue hover:bg-slate-100/50 rounded-full"
+                          title="Edit Course"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCourseToEdit(course);
+                            setIsEditModalOpen(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                        <p className="text-xs text-slate-500 font-medium mb-1">Total Capacity</p>
+                        <p className="font-semibold text-slate-900">{course.capacity || 50}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                        <p className="text-xs text-slate-500 font-medium mb-1">Credits</p>
+                        <p className="font-semibold text-slate-900">{course.credits || 3}</p>
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => {
+                        setSelectedCourse(course._id);
+                        setIsSessionModalOpen(true);
+                      }}
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      Start Session
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -123,10 +273,10 @@ export default function LecturerDashboard() {
             {/* Pulse ring background */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-babcock-gold/10 rounded-full animate-ping opacity-20 pointer-events-none" />
 
-            <CardHeader className="text-center pb-2 relative z-10">
-              <Badge variant="warning" className="mx-auto mb-3 absolute -top-3 scale-90 tracking-widest uppercase animate-pulse">Live Session</Badge>
-              <CardTitle className="text-xl">{LECTURER_COURSES.find(c => c.id === selectedCourse)?.code || "GEDS 400"}</CardTitle>
-              <CardDescription>Accepting check-ins now</CardDescription>
+            <CardHeader className="text-center pb-2 relative z-10 pt-10">
+              <Badge variant="warning" className="absolute top-2 left-1/2 -translate-x-1/2 scale-90 tracking-widest uppercase animate-pulse border-babcock-gold/30">Live Session</Badge>
+              <CardTitle className="text-2xl font-display font-bold tracking-tight text-slate-900">{courses.find(c => c._id === selectedCourse)?.courseCode || "Unknown Course"}</CardTitle>
+              <CardDescription className="font-medium text-slate-500">Accepting check-ins now</CardDescription>
             </CardHeader>
 
             <CardContent className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
@@ -152,11 +302,11 @@ export default function LecturerDashboard() {
                 </div>
               </div>
 
-              <div className="w-full grid grid-cols-2 gap-3">
-                <Button variant="outline" className="w-full gap-2 border-slate-300 text-slate-600" onClick={handleExtendSession}>
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button variant="outline" className="w-full gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold" onClick={handleExtendSession}>
                   <Clock className="w-4 h-4" /> +5 Mins
                 </Button>
-                <Button variant="danger" className="w-full gap-2" onClick={handleEndSession}>
+                <Button variant="danger" className="w-full gap-2 font-semibold shadow-md shadow-red-500/20" onClick={handleEndSession}>
                   <Square className="w-4 h-4 fill-current" /> End Now
                 </Button>
               </div>
@@ -166,14 +316,14 @@ export default function LecturerDashboard() {
           {/* Map Column */}
           <Card className="lg:col-span-2 border-slate-200">
             <CardHeader className="flex flex-row justify-between items-center border-b border-slate-100 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-900">
                   <MapIcon className="w-5 h-5 text-babcock-blue" />
                   Classroom Geofence
                 </CardTitle>
-                <CardDescription>Location restriction boundary.</CardDescription>
+                <CardDescription className="sm:ml-7 text-sm">Location restriction boundary.</CardDescription>
               </div>
-              <Badge variant="success">Boundary Enforced</Badge>
+              <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm mt-3 sm:mt-0 self-start sm:self-center">Boundary Enforced</Badge>
             </CardHeader>
             <CardContent className="p-0">
               <div className="w-full h-[350px] bg-[#e5e3df] relative overflow-hidden flex flex-col items-center justify-center">
@@ -197,16 +347,39 @@ export default function LecturerDashboard() {
         </div>
       )}
 
-      {/* Session Creation Modal */}
-      <Modal
+      {/* Course Creation Modal */}
+      <CreateCourseModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchCourses}
+      />
+
+      {/* Course Editing Modal */}
+      <EditCourseModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={fetchCourses}
+        course={courseToEdit}
+      />
+
+      {/* Roster Management Modal */}
+      <ManageCourseModal
+        isOpen={isManageModalOpen}
+        onClose={() => setIsManageModalOpen(false)}
+        onSuccess={fetchCourses}
+        course={courseToManage}
+      />
+
+      {/* Session Start Modal */}
+      <Modal
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
         title="Start Attendance Session"
         description="Configure the class details to broadcast an OTC and activate the GPS boundary."
         maxWidth="xl"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsSessionModalOpen(false)}>Cancel</Button>
             <Button
               onClick={handleCreateSession}
               disabled={!selectedCourse || !selectedLocation || parseInt(sessionDuration) < 5}
@@ -225,7 +398,7 @@ export default function LecturerDashboard() {
               value={selectedCourse}
               onChange={setSelectedCourse}
               placeholder="Select course to take attendance for..."
-              options={LECTURER_COURSES.map(c => ({ label: `${c.code} - ${c.title}`, value: c.id }))}
+              options={courses.map(c => ({ label: `${c.courseCode} - ${c.courseName}`, value: c._id }))}
             />
           </div>
 

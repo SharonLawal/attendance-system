@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, BookOpen, Calendar, BarChart3, User, LogOut, MapPin 
+import {
+  LayoutDashboard, BookOpen, Calendar, BarChart3, User, LogOut, MapPin
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/student/dashboard" },
@@ -16,6 +17,7 @@ const navItems = [
 
 export function StudentSidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="w-64 bg-[#003366] text-white flex flex-col shrink-0 h-screen sticky top-0">
@@ -35,14 +37,13 @@ export function StudentSidebar() {
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link 
-              key={item.href} 
+            <Link
+              key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
-                isActive 
-                  ? "bg-[#FBBF24] text-[#003366] font-semibold shadow-md" 
+              className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${isActive
+                  ? "bg-[#FBBF24] text-[#003366] font-semibold shadow-md"
                   : "text-slate-300 hover:bg-white/10 hover:text-white"
-              }`}
+                }`}
             >
               <item.icon size={20} className={isActive ? "text-[#003366]" : "text-slate-400 group-hover:text-white"} />
               <span className="text-sm">{item.label}</span>
@@ -55,13 +56,13 @@ export function StudentSidebar() {
       <div className="p-4 border-t border-white/10 bg-[#002244]">
         <div className="flex items-center gap-3">
           <div className="size-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xs font-bold text-[#FBBF24]">
-            SL
+            {user?.fullName?.substring(0, 2).toUpperCase() || 'NA'}
           </div>
           <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium truncate text-white">Sharon Lawal</p>
-            <p className="text-xs text-slate-400 truncate">22/0234</p>
+            <p className="text-sm font-medium truncate text-white">{user?.fullName || "Student Name"}</p>
+            <p className="text-xs text-slate-400 truncate">{user?.universityId || "Matric No."}</p>
           </div>
-          <button className="text-slate-400 hover:text-red-400 transition-colors">
+          <button onClick={() => logout()} className="text-slate-400 hover:text-red-400 transition-colors">
             <LogOut size={18} />
           </button>
         </div>

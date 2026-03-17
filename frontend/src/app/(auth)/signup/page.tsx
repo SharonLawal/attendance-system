@@ -20,6 +20,7 @@ import {
 import { signupSchema, SignupFormData } from "@/lib/validations/auth";
 import { useAuth } from "@/context/AuthContext";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function SignupPage() {
       role: "Student",
       password: "",
       confirmPassword: "",
-      terms: false,
+      terms: false as unknown as true,
     },
   });
 
@@ -68,7 +69,10 @@ export default function SignupPage() {
         role: data.role,
         universityId: data.idNumber,
       });
-      router.push("/verify-email?email=" + encodeURIComponent(data.email));
+
+      // Registration successful, fire toast and redirect to login
+      toast.success("Account created successfully! Please log in.");
+      router.push('/login');
     } catch (error: any) {
       setServerError(error.response?.data?.message || "An unexpected error occurred.");
     } finally {
@@ -184,7 +188,7 @@ export default function SignupPage() {
                     {...register("fullName")}
                     type="text"
                     className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.fullName ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 placeholder-slate-400 font-medium`}
-                    placeholder="e.g. Sharon Lawal"
+                    placeholder="e.g. John Doe"
                   />
                 </div>
                 {errors.fullName && (

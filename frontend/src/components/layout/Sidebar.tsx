@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icons } from "@/constants/icons";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 interface SidebarProps {
   role: "STUDENT" | "LECTURER" | "ADMIN";
@@ -11,6 +12,7 @@ interface SidebarProps {
 
 export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   // Navigation items based on role (SOLID: Interface Segregation)
   const navItems = {
@@ -47,8 +49,8 @@ export function Sidebar({ role }: SidebarProps) {
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium",
-                isActive 
-                  ? "bg-primary-dark text-secondary" 
+                isActive
+                  ? "bg-primary-dark text-secondary"
                   : "hover:bg-primary-dark/50 text-slate-200"
               )}
             >
@@ -60,7 +62,9 @@ export function Sidebar({ role }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-primary-dark">
-        <button className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white transition-colors">
+        <button
+          onClick={() => logout()}
+          className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:text-white transition-colors">
           <Icons.Logout size={20} />
           Sign Out
         </button>

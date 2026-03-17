@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +29,7 @@ const resetPasswordSchema = z
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
-export default function ResetPasswordPage() {
+function ResetPasswordFormContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
@@ -176,8 +176,8 @@ export default function ResetPasswordPage() {
                                         {...register("password")}
                                         type={showPassword ? "text" : "password"}
                                         className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.password
-                                                ? "border-red-500"
-                                                : "border-slate-300 focus:ring-[#003366]/20 focus:border-[#003366]"
+                                            ? "border-red-500"
+                                            : "border-slate-300 focus:ring-[#003366]/20 focus:border-[#003366]"
                                             } rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 font-medium`}
                                         placeholder="Enter new password"
                                     />
@@ -211,8 +211,8 @@ export default function ResetPasswordPage() {
                                         {...register("confirmPassword")}
                                         type={showConfirmPassword ? "text" : "password"}
                                         className={`w-full pl-11 pr-12 py-3.5 bg-white border ${errors.confirmPassword
-                                                ? "border-red-500"
-                                                : "border-slate-300 focus:ring-[#003366]/20 focus:border-[#003366]"
+                                            ? "border-red-500"
+                                            : "border-slate-300 focus:ring-[#003366]/20 focus:border-[#003366]"
                                             } rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 font-medium`}
                                         placeholder="Confirm new password"
                                     />
@@ -255,5 +255,17 @@ export default function ResetPasswordPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="w-8 h-8 rounded-full border-4 border-[#003366]/30 border-t-[#003366] animate-spin" />
+            </div>
+        }>
+            <ResetPasswordFormContent />
+        </Suspense>
     );
 }

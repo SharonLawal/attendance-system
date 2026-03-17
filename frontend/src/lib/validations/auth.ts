@@ -24,7 +24,7 @@ const loginPasswordRule = z
 export const loginSchema = z.object({
   email: babcockEmailRule,
   password: loginPasswordRule,
-  rememberMe: z.boolean().optional().default(false),
+  rememberMe: z.boolean(),
 });
 
 // --- Signup Schema ---

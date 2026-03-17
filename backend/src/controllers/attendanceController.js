@@ -100,16 +100,30 @@ const markAttendance = asyncHandler(async (req, res) => {
         throw new Error('Location outside classroom bounds');
     }
 
-    // 4. Try to save the attendance record
+    // 4. Determine Enrollment & Save Record
     try {
+        const course = await Course.findById(sessionByCode.courseId);
+        const isEnrolled = course.enrolledStudents && course.enrolledStudents.includes(studentId);
+        const recordStatus = isEnrolled ? 'Present' : 'Pending';
+
         const record = await AttendanceRecord.create({
             sessionId: sessionByCode._id,
             studentId: studentId,
-            status: 'Present',
+            status: recordStatus,
             source: 'Manual_GPS'
         });
 
+        if (!isEnrolled) {
+            res.status(201).json({
+                status: 'pending',
+                message: 'Attendance marked as pending. Awaiting lecturer approval.',
+                record
+            });
+            return; // Skip threshold checks for unverified students
+        }
+
         res.status(201).json({
+            status: 'success',
             message: 'Attendance marked successfully',
             record,
         });

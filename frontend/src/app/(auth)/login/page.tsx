@@ -46,11 +46,10 @@ export default function LoginPage() {
     try {
       const result = await login(data.email, data.password, data.rememberMe);
 
-      // Form redirect logic is now handled automatically by the app's middleware.ts
-      // which detects the new httpOnly access cookie and routes based on User Role.
-      // But we can forcibly redirect them to the root so the middleware catches them immediately:
-      if (result) {
-        window.location.href = "/";
+      // Redirect user directly to their role-specific dashboard based on the payload.
+      if (result && result.role) {
+        const dashboard = result.role.toLowerCase();
+        window.location.href = `/${dashboard}/dashboard`;
       }
     } catch (error: any) {
       setServerError(error.response?.data?.message || "Invalid credentials or network error.");

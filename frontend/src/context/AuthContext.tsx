@@ -16,7 +16,7 @@ interface AuthContextType {
     isLoading: boolean;
     isAuthenticated: boolean;
     login: (email: string, password: string, rememberMe?: boolean) => Promise<User>;
-    register: (data: any) => Promise<User>;
+    register: (data: any) => Promise<any>;
     logout: () => Promise<void>;
     refetchUser: () => Promise<void>;
 }
@@ -56,14 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const register = async (data: any) => {
         const response = await apiClient.post('/api/auth/register', data);
-        const userData = response.data.data;
-        setUser(userData);
-        return userData;
+        return response.data;
     };
 
     const logout = async () => {
         await apiClient.post('/api/auth/logout');
-        setUser(null);
         if (typeof window !== 'undefined') {
             window.location.href = '/login';
         }

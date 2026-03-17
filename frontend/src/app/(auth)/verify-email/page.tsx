@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, ShieldCheck, Mail } from "lucide-react";
 import apiClient from "@/lib/axios";
 import { toast } from "sonner";
 
-export default function VerifyEmailPage() {
+function VerifyEmailFormContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email");
@@ -145,7 +145,7 @@ export default function VerifyEmailPage() {
                     {otp.map((digit, index) => (
                         <input
                             key={index}
-                            ref={(el) => (inputRefs.current[index] = el)}
+                            ref={(el) => { inputRefs.current[index] = el; }}
                             type="text"
                             inputMode="numeric"
                             maxLength={1}
@@ -190,5 +190,17 @@ export default function VerifyEmailPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function VerifyEmailPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="w-8 h-8 rounded-full border-4 border-[#003366]/30 border-t-[#003366] animate-spin" />
+            </div>
+        }>
+            <VerifyEmailFormContent />
+        </Suspense>
     );
 }

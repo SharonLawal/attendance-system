@@ -11,6 +11,7 @@ import { Alert } from "@/components/ui/Alert";
 import { OTPInput } from "@/components/ui/OTPInput";
 import { VerificationProgress, VerificationState } from "@/components/ui/VerificationProgress";
 import { DataTable } from "@/components/ui/DataTable";
+import apiClient from "@/lib/axios";
 
 import {
   MOCK_ATTENDANCE_PERCENTAGE,
@@ -30,55 +31,66 @@ export default function StudentDashboard() {
     setErrorMessage("");
   };
 
-  const simulateGeolocation = () => {
+  const simulateGeolocation = async () => {
     resetVerification();
-
-    // Step 1: Requesting Permission
     setVerificationState("requesting");
 
-    // Simulate probability of user denying permission (10% chance)
-    const permissionDenied = Math.random() < 0.1;
+    if (!navigator.geolocation) {
+      setVerificationState("error");
+      setErrorMessage("Geolocation is not supported by your browser");
+      return;
+    }
 
-    setTimeout(() => {
-      if (permissionDenied) {
-        setVerificationState("error");
-        setErrorMessage("Location permission denied. Please enable GPS access in your browser settings to mark attendance.");
-        toast.error("Location permission denied");
-        return;
-      }
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
 
       // Step 2: Averaging Signal (takes 5 seconds total)
       setVerificationState("averaging");
       let currentSample = 0;
 
-      const sampleInterval = setInterval(() => {
+      const sampleInterval = setInterval(async () => {
         currentSample += 1;
         setGpsSamples(currentSample);
 
         if (currentSample >= 5) {
           clearInterval(sampleInterval);
-
-          // Step 3: Verifying Polygon Bounds
           setVerificationState("verifying");
 
-          setTimeout(() => {
-            // Simulate outcome
-            const isSuccess = Math.random() > 0.05; // 95% success rate
+          try {
+            const res = await apiClient.post('/api/attendance/mark', {
+              otcCode: otc,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            });
 
-            if (isSuccess) {
-              setVerificationState("success");
-              toast.success(`Successfully marked present for ${COURSE_CODE}`);
-              setTimeout(resetVerification, 3000);
+            setVerificationState("success");
+
+            if (res.data.status === 'pending') {
+              // Throw the yellow warning for Course Pending Roster
+              toast.warning(res.data.message || "Attendance marked as pending. Awaiting lecturer approval.", {
+                duration: 8000,
+                style: { backgroundColor: '#fef3c7', borderColor: '#fcd34d', color: '#92400e' }
+              });
+              setTimeout(resetVerification, 4000);
             } else {
-              setVerificationState("error");
-              setErrorMessage("You appear to be outside the classroom boundary. Please move closer and try again.");
-              toast.error("Verification failed");
+              toast.success("Successfully marked present!");
+              setTimeout(resetVerification, 3000);
             }
-          }, 1500);
+          } catch (error: any) {
+            setVerificationState("error");
+            setErrorMessage(error.response?.data?.message || "Failed to verify location or session has expired.");
+            toast.error("Verification failed");
+          }
         }
       }, 1000);
 
-    }, 800);
+    } catch (error) {
+      setVerificationState("error");
+      setErrorMessage("Location permission denied. Please enable GPS access in your browser settings to mark attendance.");
+      toast.error("Location permission denied");
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

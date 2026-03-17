@@ -78,38 +78,28 @@ const registerUser = asyncHandler(async (req, res) => {
         passwordHash,
         role,
         universityId,
-        isVerified: false
+        isVerified: true
     });
 
-    const otp = user.generateVerificationOTP();
     await user.save();
 
-    // Send verification email
-    try {
-        await sendEmail({
-            email: user.email,
-            subject: 'Verify Your Email - VeriPoint',
-            template: 'verification',
-            context: {
-                otp,
-                email: user.email,
-            },
-        });
+    // Bypass OTP Email functionality
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user, false);
+    setAuthCookies(res, accessToken, refreshToken, false);
 
-        res.status(201).json({
-            success: true,
-            message: 'Registration successful. Please check your email for the verification code.',
-            data: {
-                email: user.email,
-                requiresVerification: true,
-            },
-        });
-    } catch (error) {
-        // Since email failed, remove the unverified user to let them try again
-        await User.findByIdAndDelete(user._id);
-        res.status(500);
-        throw new Error('Failed to send verification email. Please try again.');
-    }
+    res.status(201).json({
+        success: true,
+        message: 'Registration successful.',
+        data: {
+            _id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role,
+            universityId: user.universityId,
+            requiresVerification: false,
+        },
+    });
 });
 
 // @desc    Verify Email via OTP
@@ -282,35 +272,41 @@ const resetPassword = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = asyncHandler(async (req, res) => {
+    console.log("LOGIN REQUEST RECEIVED:", req.body);
     const validatedData = loginSchema.parse(req.body);
     const { email, password, rememberMe } = validatedData;
 
     const user = await User.findOne({ email });
+    console.log("USER FOUND IN DB:", !!user);
 
-    if (user && (await bcrypt.compare(password, user.passwordHash))) {
-        if (!user.isVerified) {
-            res.status(403).json({ success: false, message: 'Please verify your email address to log in.', code: 'UNVERIFIED_EMAIL' });
-            return;
+    if (user) {
+        console.log("DB PASSWORD HASH:", user.passwordHash);
+        const isMatch = await bcrypt.compare(password, user.passwordHash);
+        console.log("PASSWORD MATCH RESULT:", isMatch);
+
+        if (isMatch) {
+
+            console.log("LOGIN SUCCESSFUL, issuing cookies");
+            const accessToken = generateAccessToken(user);
+            const refreshToken = generateRefreshToken(user, rememberMe);
+            setAuthCookies(res, accessToken, refreshToken, rememberMe);
+
+            res.json({
+                success: true,
+                data: {
+                    _id: user.id,
+                    fullName: user.fullName,
+                    email: user.email,
+                    role: user.role,
+                    universityId: user.universityId,
+                    message: "Login successful"
+                }
+            });
+        } else {
+            res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
-
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user, rememberMe);
-        setAuthCookies(res, accessToken, refreshToken, rememberMe);
-
-        res.json({
-            success: true,
-            data: {
-                _id: user.id,
-                fullName: user.fullName,
-                email: user.email,
-                role: user.role,
-                universityId: user.universityId,
-                message: "Login successful"
-            }
-        });
     } else {
-        res.status(401);
-        throw new Error('Invalid email or password');
+        res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 });
 
@@ -318,8 +314,13 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Public
 const logoutUser = asyncHandler(async (req, res) => {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    };
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
     res.status(200).json({ success: true, message: 'Logged out successfully' });
 });
 
