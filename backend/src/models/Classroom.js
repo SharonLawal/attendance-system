@@ -11,7 +11,18 @@ const classroomSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    // Optional: Could add locationPolygon here in the future to pre-define room bounds
+    building: { 
+        type: String, 
+        required: true 
+    },
+    coordinates: {
+        latitude: { type: Number, required: true },
+        longitude: { type: Number, required: true }
+    },
+    isActive: { 
+        type: Boolean, 
+        default: true 
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Classroom', classroomSchema);

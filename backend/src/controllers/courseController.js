@@ -2,6 +2,7 @@ const Course = require('../models/Course');
 const User = require('../models/User');
 const AttendanceSession = require('../models/AttendanceSession');
 const AttendanceRecord = require('../models/AttendanceRecord');
+const mongoose = require('mongoose'); // Added
 const asyncHandler = require('express-async-handler');
 const { z } = require('zod');
 
@@ -12,6 +13,121 @@ const courseSchema = z.object({
     department: z.string().optional(),
     credits: z.number().min(1).max(6).optional(),
     capacity: z.number().min(1).optional()
+});
+
+// @desc    Get dashboard analytics for lecturer
+// @route   GET /api/lecturer/dashboard
+// @access  Private/Lecturer
+const getDashboard = asyncHandler(async (req, res) => {
+    const lecturerId = req.user._id;
+
+    const [coursesCount, activeSession, records] = await Promise.all([
+        Course.countDocuments({ lecturerId }),
+        AttendanceSession.findOne({ 
+            lecturerId, 
+            endTime: { $gt: new Date() } 
+        }).populate('courseId', 'courseCode courseName'),
+        
+        // Complex aggregation to compute overall average attendance rate
+        AttendanceSession.aggregate([
+            { $match: { lecturerId: new mongoose.Types.ObjectId(lecturerId) } },
+            {
+                $lookup: {
+                    from: 'attendancerecords',
+                    localField: '_id',
+                    foreignField: 'sessionId',
+                    as: 'records'
+                }
+            },
+            {
+                $project: {
+                    presentCount: {
+                        $size: {
+                            $filter: {
+                                input: '$records',
+                                as: 'record',
+                                cond: { $eq: ['$$record.status', 'Present'] }
+                            }
+                        }
+                    },
+                    totalCount: { $size: '$records' }
+                }
+            }
+        ])
+    ]);
+
+    // Simple calculation for average rate
+    let totalExpected = 0;
+    let totalPresent = 0;
+    records.forEach(session => {
+        // Mock expected count as 50 per class if strictly unknown, else use total count + simple math
+        // A better approach is fetching actual student counts via Enrollment model. 
+        totalPresent += session.presentCount;
+        totalExpected += session.totalCount > 0 ? session.totalCount : 50; 
+    });
+    
+    const averageAttendance = totalExpected === 0 ? 100 : Math.round((totalPresent / totalExpected) * 100);
+
+    // Get a rough total students count (mocked to unique students attended)
+    const uniqueStudents = await AttendanceRecord.distinct('studentId');
+
+    res.json({
+        total_courses: coursesCount,
+        active_sessions: activeSession ? 1 : 0,
+        total_students: uniqueStudents.length, // Simplified metric
+        average_attendance: averageAttendance,
+        active_session: activeSession ? {
+            id: activeSession._id,
+            course_code: activeSession.courseId?.courseCode,
+            course_name: activeSession.courseId?.courseName,
+            otc_code: activeSession.otcCode,
+            start_time: activeSession.startTime,
+            end_time: activeSession.endTime,
+        } : null,
+        upcoming_sessions: [] // Skipping upcoming sessions for MVP scope
+    });
+});
+
+// @desc    Get live polling stats for an active session
+// @route   GET /api/sessions/:id/live-stats
+// @access  Private/Lecturer (Note: Moved route to course/session router or added inline)
+const getLiveSessionStats = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const lecturerId = req.user._id;
+
+    const session = await AttendanceSession.findOne({
+        _id: id,
+        lecturerId // Secure: Ensure this session belongs to the requesting lecturer
+    }).populate('courseId', 'courseCode courseName');
+
+    if (!session) {
+        res.status(404);
+        throw new Error('Session not found or unauthorized');
+    }
+
+    const checkedInCount = await AttendanceRecord.countDocuments({
+        sessionId: id,
+        status: 'Present'
+    });
+
+    // Replace with Enrollment real count eventually
+    const expectedCount = 50; 
+
+    const now = new Date();
+    const timeRemaining = Math.max(0, Math.floor((session.endTime.getTime() - now.getTime()) / 1000));
+
+    res.json({
+        session_id: session._id,
+        course_code: session.courseId?.courseCode,
+        course_name: session.courseId?.courseName,
+        otc_code: session.otcCode,
+        checked_in_count: checkedInCount,
+        expected_count: expectedCount,
+        attendance_rate: Math.round((checkedInCount / expectedCount) * 100),
+        time_remaining: timeRemaining,
+        start_time: session.startTime,
+        end_time: session.endTime
+    });
 });
 
 // @desc    Create a new course
@@ -179,7 +295,7 @@ const importStudents = asyncHandler(async (req, res) => {
 // @desc    Get pending check-ins for a course
 // @route   GET /api/courses/:id/pending
 // @access  Private (Lecturer only)
-const getPendingStudents = asyncHandler(async (req, res) => {
+const getPendingCheckIns = asyncHandler(async (req, res) => {
     const courseId = req.params.id;
     const course = await Course.findById(courseId);
 
@@ -213,7 +329,7 @@ const getPendingStudents = asyncHandler(async (req, res) => {
 // @desc    Resolve a pending check-in (Approve/Reject)
 // @route   POST /api/courses/:id/resolve-pending
 // @access  Private (Lecturer only)
-const resolvePending = asyncHandler(async (req, res) => {
+const resolvePendingCheckIn = asyncHandler(async (req, res) => {
     const courseId = req.params.id;
     const { recordId, action } = req.body;
 
@@ -263,10 +379,12 @@ const resolvePending = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+    getDashboard,
+    getLiveSessionStats,
     createCourse,
     getMyCourses,
     updateCourse,
     importStudents,
-    getPendingStudents,
-    resolvePending
+    getPendingCheckIns,
+    resolvePendingCheckIn
 };

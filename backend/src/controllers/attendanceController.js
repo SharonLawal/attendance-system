@@ -7,7 +7,7 @@ const Notification = require('../models/Notification');
 const Course = require('../models/Course');
 
 const markAttendanceSchema = z.object({
-    otcCode: z.string().length(4, 'OTC Code must be exactly 4 digits'),
+    otcCode: z.string().length(6, 'OTC Code must be exactly 6 digits'),
     latitude: z.number({ required_error: 'Latitude is required' }),
     longitude: z.number({ required_error: 'Longitude is required' }),
 });

@@ -8,34 +8,27 @@ import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
-
-import { RECENT_HISTORY, EXTENDED_HISTORY } from "@/lib/demodata";
+import { useStudentHistory } from "@/hooks/useStudentHistory";
+import { Loader2, RefreshCcw } from "lucide-react";
 
 export default function StudentHistory() {
   const [filterCourse, setFilterCourse] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const itemsPerPage = 5;
+  const itemsPerPage = 8;
 
-  // Filter Logic
-  const filteredData = EXTENDED_HISTORY.filter(record => {
-    const matchesCourse = filterCourse === "all" || record.course === filterCourse;
-    const matchesSearch = record.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.date.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCourse && matchesSearch;
-  });
-
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // React Query handles the data fetching and caching
+  const { data, isLoading, error, refetch } = useStudentHistory(
+    currentPage, 
+    itemsPerPage, 
+    searchTerm, 
+    filterCourse
   );
 
   const columns = [
-    { header: "Course Code", accessorKey: "course" as keyof typeof EXTENDED_HISTORY[0], className: "font-bold text-slate-800" },
-    { header: "Date", accessorKey: "date" as keyof typeof EXTENDED_HISTORY[0] },
-    { header: "Time", accessorKey: "time" as keyof typeof EXTENDED_HISTORY[0] },
+    { header: "Course Code", accessorKey: "course", className: "font-bold text-slate-800" },
+    { header: "Date", accessorKey: "date" },
+    { header: "Time", accessorKey: "time" },
     {
       header: "Verification Method",
       cell: (item: any) => (
@@ -46,7 +39,7 @@ export default function StudentHistory() {
     },
     {
       header: "Status",
-      cell: (item: typeof EXTENDED_HISTORY[0]) => (
+      cell: (item: any) => (
         <Badge
           variant={item.status === "Present" ? "success" : item.status === "Late" ? "warning" : "danger"}
           className="uppercase tracking-wider text-[10px]"
@@ -125,27 +118,46 @@ export default function StudentHistory() {
 
         {/* DataTable Wrapper */}
         <div className="bg-white border text-center border-slate-200 rounded-lg p-1 overflow-hidden shadow-sm">
-          <DataTable
-            data={paginatedData}
-            columns={columns}
-            emptyTitle="No records found"
-            emptyDescription="There are no attendance logs matching your current filters."
-            className="border-0 shadow-none rounded-none"
-          />
-        </div>
-
-        {/* Pagination Controls */}
-        <div className="flex justify-between items-center py-2 px-1">
-          <p className="text-sm text-slate-500 font-medium">
-            Showing <span className="text-slate-800 font-bold">{Math.min(filteredData.length, (currentPage - 1) * itemsPerPage + 1)}</span> to{" "}
-            <span className="text-slate-800 font-bold">{Math.min(filteredData.length, currentPage * itemsPerPage)}</span> of{" "}
-            <span className="text-slate-800 font-bold">{filteredData.length}</span> records
-          </p>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+          {isLoading ? (
+            <div className="w-full h-64 flex flex-col items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-babcock-blue mb-4" />
+              <p className="text-slate-500 font-medium">Loading history records...</p>
+            </div>
+          ) : error || !data ? (
+            <div className="w-full bg-red-50 p-6 rounded-lg border border-red-100 flex flex-col items-center">
+              <h3 className="text-red-800 font-bold mb-2">Failed to load attendance history</h3>
+              <Button onClick={() => refetch()} variant="outline" className="gap-2 mt-4 bg-white">
+                <RefreshCcw className="w-4 h-4" />
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <>
+              <DataTable
+                data={data.data}
+                columns={columns}
+                emptyTitle="No records found"
+                emptyDescription="There are no attendance logs matching your current filters."
+                className="border-0 shadow-none rounded-none"
+              />
+              
+              {/* Pagination Controls */}
+              {data.pagination && data.pagination.totalItems > 0 && (
+                <div className="flex justify-between items-center py-2 px-4 border-t border-slate-100 gap-4 mt-2">
+                  <p className="text-sm text-slate-500 font-medium pb-2 shrink-0">
+                    Showing <span className="text-slate-800 font-bold">{(data.pagination.currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                    <span className="text-slate-800 font-bold">{Math.min(data.pagination.currentPage * itemsPerPage, data.pagination.totalItems)}</span> of{" "}
+                    <span className="text-slate-800 font-bold">{data.pagination.totalItems}</span> records
+                  </p>
+                  <Pagination
+                    currentPage={data.pagination.currentPage}
+                    totalPages={data.pagination.totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
 
       </div>

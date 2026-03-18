@@ -7,10 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
+import { useAuth } from "@/context/AuthContext";
 
 export default function StudentProfile() {
+  const { user } = useAuth();
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const initials = user?.fullName?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "S";
 
   const handleLogout = () => {
     setIsLoggingOut(true);
@@ -38,16 +42,16 @@ export default function StudentProfile() {
             <CardContent className="p-6 flex flex-col items-center text-center">
               <div className="w-32 h-32 rounded-full bg-slate-100 border-4 border-white shadow-xl flex flex-col items-center justify-center mb-6 overflow-hidden relative">
                 <div className="absolute inset-0 bg-gradient-to-tr from-babcock-blue to-babcock-gold/40" />
-                <span className="text-4xl font-bold text-white relative z-10 font-display shadow-sm">JD</span>
+                <span className="text-4xl font-bold text-white relative z-10 font-display shadow-sm">{initials}</span>
               </div>
 
-              <h2 className="text-xl font-bold font-display text-slate-800">John Doe</h2>
+              <h2 className="text-xl font-bold font-display text-slate-800">{user?.fullName || "Student Profile"}</h2>
               <Badge variant="babcock" className="mt-2 mb-6">Software Engineering</Badge>
 
               <div className="w-full space-y-4">
                 <div className="flex justify-between items-center py-2 border-b border-slate-100">
                   <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Matric No</span>
-                  <span className="text-sm font-bold text-slate-700">21/1234</span>
+                  <span className="text-sm font-bold text-slate-700">{user?.universityId || "N/A"}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-slate-100">
                   <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Level</span>
@@ -77,7 +81,7 @@ export default function StudentProfile() {
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-4">
                   <label className="text-xs font-semibold text-slate-500 uppercase">Primary Email Address</label>
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-slate-800 font-medium">john.doe@student.babcock.edu.ng</p>
+                    <p className="text-slate-800 font-medium">{user?.email || "No email provided"}</p>
                     <div className="bg-emerald-100 text-emerald-700 p-1 rounded-full"><Shield className="w-3.5 h-3.5" /></div>
                   </div>
                   <p className="text-xs text-slate-400 mt-2">Verified organizational domain.</p>

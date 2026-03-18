@@ -13,13 +13,19 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { Select } from "@/components/ui/Select";
 import { EditUserModal, UserToEdit } from "@/components/ui/EditUserModal";
 import { toast } from "sonner";
-import { ADMIN_USERS_DATA } from "@/lib/demodata";
+import { useAdminUsers } from "@/hooks/useAdminData";
 
 export default function AdminUsers() {
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
+
+    const { data: usersData, isLoading } = useAdminUsers(currentPage, itemsPerPage, searchTerm, roleFilter);
+
+    // Filter Logic
+    const paginatedUsers = usersData?.users || [];
+    const totalPages = usersData?.pagination?.totalPages || 1;
 
     // Modal States
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -29,17 +35,6 @@ export default function AdminUsers() {
 
     // Drag & Drop State
     const [isDragging, setIsDragging] = useState(false);
-
-    // Filtering & Pagination Logic
-    const filteredUsers = ADMIN_USERS_DATA.filter(u => {
-        const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            u.identifier.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesRole = roleFilter === "all" || u.role.toLowerCase() === roleFilter;
-        return matchesSearch && matchesRole;
-    });
-
-    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-    const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     // Handlers
     const handleAddUserSubmit = (e: React.FormEvent) => {
@@ -58,12 +53,12 @@ export default function AdminUsers() {
     };
 
     const columns = [
-        { header: "Name", accessorKey: "name" as keyof typeof ADMIN_USERS_DATA[0], className: "font-semibold text-slate-800" },
-        { header: "ID / Matric", accessorKey: "identifier" as keyof typeof ADMIN_USERS_DATA[0], className: "font-mono text-slate-500 text-sm" },
-        { header: "Role", accessorKey: "role" as keyof typeof ADMIN_USERS_DATA[0] },
+        { header: "Name", accessorKey: "name" as const, className: "font-semibold text-slate-800" },
+        { header: "ID / Matric", accessorKey: "identifier" as const, className: "font-mono text-slate-500 text-sm" },
+        { header: "Role", accessorKey: "role" as const },
         {
             header: "Status",
-            cell: (item: typeof ADMIN_USERS_DATA[0]) => (
+            cell: (item: any) => (
                 <Badge variant={item.status === "Active" ? "success" : item.status === "Suspended" ? "danger" : "neutral"}>
                     {item.status}
                 </Badge>
@@ -71,7 +66,7 @@ export default function AdminUsers() {
         },
         {
             header: "Actions",
-            cell: (item: typeof ADMIN_USERS_DATA[0]) => (
+            cell: (item: any) => (
                 <div className="flex justify-end gap-2">
                     <button onClick={() => { setSelectedUser(item); setIsEditModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-babcock-blue hover:bg-blue-50 rounded-md transition-colors tooltip-trigger relative group">
                         <Edit className="w-4 h-4" />
@@ -137,11 +132,16 @@ export default function AdminUsers() {
                     </div>
 
                     {/* Data Table */}
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto relative">
+                        {isLoading && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-full border-4 border-babcock-blue/30 border-t-babcock-blue animate-spin" />
+                            </div>
+                        )}
                         <DataTable
                             data={paginatedUsers}
                             columns={columns}
-                            emptyTitle="No users found."
+                            emptyTitle={isLoading ? "Loading users..." : "No users found."}
                         />
                     </div>
 

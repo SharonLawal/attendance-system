@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Course = require('../models/Course');
 const AttendanceSession = require('../models/AttendanceSession');
 const AttendanceRecord = require('../models/AttendanceRecord');
+const SyncHistory = require('../models/SyncHistory');
 const { z } = require('zod');
 
 const syncSchema = z.object({
@@ -62,9 +63,19 @@ const syncAttendance = asyncHandler(async (req, res) => {
         return err.insertedDocs;
     });
 
+    const syncedCount = result ? result.length : 0;
+
+    await SyncHistory.create({
+        lecturerId,
+        courseId,
+        platform: 'External LMS', // Usually comes from integration metadata
+        studentsSynced: syncedCount,
+        status: 'Success'
+    });
+
     res.status(200).json({
         message: 'LMS Attendance synchronized successfully',
-        syncedCount: result ? result.length : 0,
+        syncedCount,
     });
 });
 

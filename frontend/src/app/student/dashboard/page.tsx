@@ -13,13 +13,12 @@ import { VerificationProgress, VerificationState } from "@/components/ui/Verific
 import { DataTable } from "@/components/ui/DataTable";
 import apiClient from "@/lib/axios";
 
-import {
-  MOCK_ATTENDANCE_PERCENTAGE,
-  COURSE_CODE,
-  RECENT_HISTORY
-} from "@/lib/demodata";
+import { useStudentDashboard } from "@/hooks/useStudentDashboard";
+import { Loader2, RefreshCcw } from "lucide-react";
 
 export default function StudentDashboard() {
+  const { data, isLoading, error, refetch } = useStudentDashboard();
+
   const [otc, setOtc] = useState("");
   const [verificationState, setVerificationState] = useState<VerificationState>("idle");
   const [gpsSamples, setGpsSamples] = useState(0);
@@ -101,12 +100,12 @@ export default function StudentDashboard() {
   };
 
   const historyColumns = [
-    { header: "Course", accessorKey: "course" as keyof typeof RECENT_HISTORY[0], className: "font-medium" },
-    { header: "Date", accessorKey: "date" as keyof typeof RECENT_HISTORY[0] },
-    { header: "Time", accessorKey: "time" as keyof typeof RECENT_HISTORY[0] },
+    { header: "Course", accessorKey: "course", className: "font-medium" },
+    { header: "Date", accessorKey: "date" },
+    { header: "Time", accessorKey: "time" },
     {
       header: "Status",
-      cell: (item: typeof RECENT_HISTORY[0]) => (
+      cell: (item: any) => (
         <Badge
           variant={item.status === "Present" ? "success" : item.status === "Late" ? "warning" : "danger"}
           className="uppercase tracking-wider text-[10px]"
@@ -117,16 +116,41 @@ export default function StudentDashboard() {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <DashboardLayout role="student">
+        <div className="w-full h-96 flex flex-col items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-babcock-blue mb-4" />
+          <p className="text-slate-500 font-medium">Loading your dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <DashboardLayout role="student">
+        <div className="w-full bg-red-50 p-6 rounded-lg border border-red-100 flex flex-col items-center">
+          <h3 className="text-red-800 font-bold mb-2">Failed to load dashboard data</h3>
+          <Button onClick={() => refetch()} variant="outline" className="gap-2 mt-4 bg-white">
+            <RefreshCcw className="w-4 h-4" />
+            Try Again
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout role="student">
       <div className="space-y-6">
 
         {/* Dynamic Warning Alert */}
-        {MOCK_ATTENDANCE_PERCENTAGE < 75 && (
+        {data.stats.attendancePercentage < 75 && (
           <Alert
             variant="error"
             title="Attendance Warning"
-            description={`Your attendance for ${COURSE_CODE} is currently at ${MOCK_ATTENDANCE_PERCENTAGE}%. You are below the 75% threshold required to write exams.`}
+            description={`Your aggregate attendance is currently at ${data.stats.attendancePercentage}%. You are below the 75% threshold required to write exams.`}
           />
         )}
 
@@ -195,11 +219,11 @@ export default function StudentDashboard() {
                 <div className="space-y-4">
                   <div className="bg-white/10 rounded-lg p-4 border border-white/5 backdrop-blur-sm">
                     <p className="text-blue-100 text-sm">Overall Attendance</p>
-                    <p className="text-3xl font-bold text-white mt-1 select-all">{MOCK_ATTENDANCE_PERCENTAGE}%</p>
+                    <p className="text-3xl font-bold text-white mt-1 select-all">{data.stats.attendancePercentage}%</p>
                   </div>
                   <div className="bg-white/10 rounded-lg p-4 border border-white/5 backdrop-blur-sm">
                     <p className="text-blue-100 text-sm">Classes Attended</p>
-                    <p className="text-3xl font-bold text-white mt-1">42 <span className="text-lg text-blue-200 font-normal">/ 50</span></p>
+                    <p className="text-3xl font-bold text-white mt-1">{data.stats.attendedClasses} <span className="text-lg text-blue-200 font-normal">/ {data.stats.totalClasses}</span></p>
                   </div>
                 </div>
               </div>
@@ -214,26 +238,22 @@ export default function StudentDashboard() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-slate-100">
-                  <div className="p-4 hover:bg-slate-50 transition-colors flex items-start justify-between group cursor-pointer">
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">GEDS 400</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Software Engineering</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Badge variant="neutral">09:00 AM</Badge>
-                        <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> BBS Room 2</span>
+                  {data.todaysSchedule.length === 0 ? (
+                    <div className="p-6 text-center text-slate-500 font-medium">No classes scheduled for today.</div>
+                  ) : (
+                    data.todaysSchedule.map((cls: any, idx: number) => (
+                      <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex items-start justify-between group cursor-pointer">
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm">{cls.courseCode}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">{cls.courseName}</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <Badge variant="neutral">{cls.startTime}</Badge>
+                            <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> {cls.room}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="p-4 hover:bg-slate-50 transition-colors flex items-start justify-between group cursor-pointer opacity-60">
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">SENG 402</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Mobile Computing</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Badge variant="neutral">01:00 PM</Badge>
-                        <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> SAT Hub</span>
-                      </div>
-                    </div>
-                  </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -252,9 +272,10 @@ export default function StudentDashboard() {
           </CardHeader>
           <CardContent className="p-0">
             <DataTable
-              data={RECENT_HISTORY}
+              data={data.recentHistory}
               columns={historyColumns}
               className="border-0 shadow-none rounded-none border-t border-slate-100"
+              emptyTitle="No attendance records yet."
             />
           </CardContent>
         </Card>

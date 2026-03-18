@@ -9,7 +9,8 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { ADMIN_STATS, ADMIN_USERS_DATA } from "@/lib/demodata";
+import { Users, AlertTriangle, Play } from "lucide-react";
+import { useAdminDashboard, useAdminUsers } from "@/hooks/useAdminData";
 
 // Mock Recent Activity Log
 const RECENT_ACTIVITY = [
@@ -22,19 +23,27 @@ const RECENT_ACTIVITY = [
 
 export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const { data: dashboardData, isLoading: isLoadingStats } = useAdminDashboard();
+  // Fetch only 3 users for the quick directory widget
+  const { data: usersData, isLoading: isLoadingUsers } = useAdminUsers(1, 3, searchTerm, "All");
 
-  const filteredUsers = ADMIN_USERS_DATA.filter(u =>
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.identifier.toLowerCase().includes(searchTerm.toLowerCase())
-  ).slice(0, 3); // Minimize directory
+  const filteredUsers = usersData?.users || [];
+
+  const adminStats = [
+    { title: "Total Students", value: dashboardData?.totalStudents || "0", icon: Users, bg: "bg-blue-50", color: "text-blue-600", border: "border-blue-100" },
+    { title: "Active Sessions", value: dashboardData?.activeSessions || "0", icon: Play, bg: "bg-emerald-50", color: "text-emerald-600", border: "border-emerald-100" },
+    { title: "Flagged Absences", value: dashboardData?.flaggedAbsences || "0", icon: AlertTriangle, bg: "bg-red-50", color: "text-red-600", border: "border-red-100" },
+    { title: "System Health", value: dashboardData?.systemHealth || "0%", icon: ActivitySquare, bg: "bg-babcock-blue/10", color: "text-babcock-blue", border: "border-babcock-blue/20" },
+  ];
 
   const userColumns = [
-    { header: "Name", accessorKey: "name" as keyof typeof ADMIN_USERS_DATA[0], className: "font-semibold" },
-    { header: "ID", accessorKey: "identifier" as keyof typeof ADMIN_USERS_DATA[0], className: "text-slate-500 text-sm" },
-    { header: "Role", accessorKey: "role" as keyof typeof ADMIN_USERS_DATA[0] },
+    { header: "Name", accessorKey: "name" as const, className: "font-semibold" },
+    { header: "ID", accessorKey: "identifier" as const, className: "text-slate-500 text-sm" },
+    { header: "Role", accessorKey: "role" as const },
     {
       header: "Status",
-      cell: (item: typeof ADMIN_USERS_DATA[0]) => (
+      cell: (item: any) => (
         <Badge variant={item.status === "Active" ? "success" : item.status === "Suspended" ? "danger" : "neutral"}>
           {item.status}
         </Badge>
@@ -53,7 +62,7 @@ export default function AdminDashboard() {
 
         {/* Top Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {ADMIN_STATS.map((stat, idx) => (
+          {adminStats.map((stat, idx) => (
             <Card key={idx} className={`border-0 ring-1 ${stat.border} shadow-sm bg-white overflow-hidden relative group hover:shadow-md transition-all`}>
               <div className={`absolute top-0 left-0 w-1.5 h-full ${stat.bg.replace('bg-', 'bg-').replace('50', '400')}`} />
               <CardContent className="p-5 flex items-center gap-4">
@@ -62,7 +71,9 @@ export default function AdminDashboard() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-500 truncate">{stat.title}</p>
-                  <h3 className="text-2xl font-bold font-display text-slate-800">{stat.value}</h3>
+                  <h3 className="text-2xl font-bold font-display text-slate-800">
+                    {isLoadingStats ? "-" : stat.value}
+                  </h3>
                 </div>
               </CardContent>
             </Card>

@@ -6,16 +6,15 @@ const Course = require('../models/Course');
 const ClassSchedule = require('../models/ClassSchedule');
 const Notification = require('../models/Notification');
 
-// @desc    Get aggregate stats for standard student dashboard 
-// @route   GET /api/student/stats
+// @desc    Get aggregated dashboard data for student
+// @route   GET /api/student/dashboard
 // @access  Private/Student
-const getDashboardStats = asyncHandler(async (req, res) => {
+const getDashboard = asyncHandler(async (req, res) => {
     const studentId = req.user._id;
 
-    // Find all courses this student has an attendance record in (simplification for beta)
-    // In a robust system, we would query an Enrollment table.
+    // 1. Calculate Stats
     const records = await AttendanceRecord.find({ studentId }).populate('sessionId');
-    const courseIds = [...new Set(records.map(r => r.sessionId?.courseId.toString()).filter(Boolean))];
+    const courseIds = [...new Set(records.map(r => r.sessionId?.courseId?.toString()).filter(Boolean))];
 
     let totalSessions = 0;
     let presentCount = 0;
@@ -27,36 +26,73 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 
     const attendancePercentage = totalSessions === 0 ? 100 : Math.round((presentCount / totalSessions) * 100);
 
-    res.json({
-        attendancePercentage,
-    });
-});
+    const stats = {
+        attendance_percentage: attendancePercentage,
+        total_classes: totalSessions,
+        attended_classes: presentCount,
+        streak_days: 0 // Mock for now, would require complex date diffing of consecutive present records
+    };
 
-// @desc    Get attendance history
-// @route   GET /api/student/history
-// @access  Private/Student
-const getHistory = asyncHandler(async (req, res) => {
-    const studentId = req.user._id;
-    const limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    // 2. Fetch Today's Schedule (Simplified: just grabs first 3 for UI mockup if day filter isn't active)
+    const todaysSchedule = await ClassSchedule.find()
+        .populate('courseId', 'courseCode courseName')
+        .limit(3);
 
-    const records = await AttendanceRecord.find({ studentId })
+    // 3. Fetch Recent History (Last 5)
+    const recentHistory = await AttendanceRecord.find({ studentId })
         .sort({ timestamp: -1 })
-        .limit(limit)
+        .limit(5)
         .populate({
             path: 'sessionId',
             populate: { path: 'courseId', select: 'courseCode courseName' }
         });
 
-    const formattedHistory = records.map((record, index) => ({
-        id: record._id,
-        course: record.sessionId?.courseId?.courseCode || 'Unknown',
-        date: record.timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        time: record.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        status: record.status,
-        method: record.source,
-    }));
+    res.json({
+        stats,
+        todays_schedule: todaysSchedule,
+        recent_history: recentHistory
+    });
+});
 
-    res.json(formattedHistory);
+// @desc    Get aggregate stats for standard student dashboard (LEGACY - can be deprecated)
+// @route   GET /api/student/stats
+// @access  Private/Student
+const getDashboardStats = asyncHandler(async (req, res) => {
+    res.json({ attendancePercentage: 100 });
+});
+
+// @desc    Get attendance history (Paginated)
+// @route   GET /api/student/history
+// @access  Private/Student
+const getHistory = asyncHandler(async (req, res) => {
+    const studentId = req.user._id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [records, total] = await Promise.all([
+        AttendanceRecord.find({ studentId })
+            .sort({ timestamp: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate({
+                path: 'sessionId',
+                populate: { path: 'courseId', select: 'courseCode courseName' }
+            }),
+        AttendanceRecord.countDocuments({ studentId })
+    ]);
+
+    res.json({
+        data: records,
+        pagination: {
+            current_page: page,
+            total_pages: Math.ceil(total / limit),
+            total_items: total,
+            items_per_page: limit,
+            has_next_page: page * limit < total,
+            has_prev_page: page > 1,
+        }
+    });
 });
 
 // @desc    Get courses student is involved in with attendance breakdown
@@ -183,6 +219,7 @@ const getNotifications = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+    getDashboard,
     getDashboardStats,
     getHistory,
     getCourses,

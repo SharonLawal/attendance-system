@@ -6,19 +6,17 @@ import { BookOpen, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { COURSES_DATA, Course } from "@/lib/demodata";
+
+import { useStudentCourses } from "@/hooks/useStudentCourses";
+import { Loader2, RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+
+type CourseStatus = "safe" | "warning" | "critical";
 
 export default function StudentCourses() {
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading, error, refetch } = useStudentCourses();
 
-  // Simulate network fetch
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const getStatusColor = (status: Course["status"]) => {
+  const getStatusColor = (status: CourseStatus) => {
     switch (status) {
       case "safe": return "bg-emerald-500";
       case "warning": return "bg-amber-500";
@@ -27,7 +25,7 @@ export default function StudentCourses() {
     }
   };
 
-  const getStatusBadge = (status: Course["status"]) => {
+  const getStatusBadge = (status: CourseStatus) => {
     switch (status) {
       case "safe": return <Badge variant="success" className="gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Good Standing</Badge>;
       case "warning": return <Badge variant="warning" className="gap-1"><AlertTriangle className="w-3.5 h-3.5" /> At Risk</Badge>;
@@ -44,33 +42,19 @@ export default function StudentCourses() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="border-0 shadow-sm ring-1 ring-slate-200">
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <Skeleton className="h-6 w-24" />
-                      <Skeleton className="h-4 w-40" />
-                    </div>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-8 w-16" />
-                    </div>
-                    <div>
-                      <Skeleton className="h-2 w-full rounded-full" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="w-full h-64 flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-babcock-blue mb-4" />
+            <p className="text-slate-500 font-medium">Loading your courses...</p>
           </div>
-        ) : COURSES_DATA.length === 0 ? (
+        ) : error || !data ? (
+          <div className="w-full bg-red-50 p-6 rounded-lg border border-red-100 flex flex-col items-center">
+            <h3 className="text-red-800 font-bold mb-2">Failed to load courses</h3>
+            <Button onClick={() => refetch()} variant="outline" className="gap-2 mt-4 bg-white">
+              <RefreshCcw className="w-4 h-4" />
+              Try Again
+            </Button>
+          </div>
+        ) : data.length === 0 ? (
           <EmptyState
             title="No Registered Courses"
             description="You are currently not registered for any courses this semester. Please contact course registration."
@@ -78,7 +62,7 @@ export default function StudentCourses() {
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {COURSES_DATA.map((course) => (
+            {data.map((course: any) => (
               <Card key={course.id} className="border-0 shadow-sm ring-1 ring-slate-200 hover:shadow-md transition-shadow group">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start gap-4">

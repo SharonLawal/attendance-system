@@ -10,54 +10,64 @@ import { Badge } from "@/components/ui/Badge";
 import { DataTable } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "sonner";
-import { LECTURER_COURSES, LECTURER_SYNC_HISTORY } from "@/lib/demodata";
+import { useLecturerCoursesSummary, useLecturerSyncHistory } from "@/hooks/useLecturerData";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import apiClient from "@/lib/axios";
 
 export default function LecturerIntegrations() {
     const [isGoogleConnected, setIsGoogleConnected] = useState(true);
     const [isTeamsConnected, setIsTeamsConnected] = useState(false);
 
-    // Sync Simulation State
+    // Sync State
     const [selectedCourse, setSelectedCourse] = useState("");
     const [selectedPlatform, setSelectedPlatform] = useState("");
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [syncHistory, setSyncHistory] = useState(LECTURER_SYNC_HISTORY);
+    
+    const queryClient = useQueryClient();
+    const { data: courses = [] } = useLecturerCoursesSummary();
+    const { data: syncHistory = [], isLoading: isLoadingHistory } = useLecturerSyncHistory();
+
+    const { mutate: syncLms, isPending: isSyncing } = useMutation({
+        mutationFn: async (data: { courseId: string, attendedStudentIds: string[] }) => {
+            const response = await apiClient.post('/api/lms/sync', data);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['lecturer', 'syncHistory'] });
+            toast.success(`Successfully synced ${data.syncedCount} attendance records!`);
+            setSelectedCourse("");
+            setSelectedPlatform("");
+        },
+        onError: (err: any) => {
+            const message = err.response?.data?.message || err.message || "Failed to synchronize";
+            toast.error(message);
+        }
+    });
 
     const handleSync = () => {
         if (!selectedCourse || !selectedPlatform) return;
 
-        setIsSyncing(true);
         toast.info("Establishing connection with LMS...", { duration: 2000 });
 
-        // Simulate network delay and processing using Skeletons
+        // Simulate fetching student IDs from the LMS
         setTimeout(() => {
-            setIsSyncing(false);
-            const newSync = {
-                id: Date.now(),
-                platform: selectedPlatform === 'google' ? 'Google Classroom' : 'Microsoft Teams',
-                course: LECTURER_COURSES.find(c => c.id === selectedCourse)?.code || "Unknown",
-                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-                studentsSynced: Math.floor(Math.random() * 50) + 10,
-                status: "Success"
-            };
-
-            setSyncHistory([newSync, ...syncHistory]);
-            toast.success(`Successfully synced ${newSync.studentsSynced} attendance records!`);
-
-            // Reset form
-            setSelectedCourse("");
-            setSelectedPlatform("");
-        }, 3500);
+            // For now, we simulate finding 2 dummy students from LMS that need their attendance saved
+            const mockAttendedIds = ["65d5f2a1a2b3c4d5e6f7g8h9", "65d5f2a1a2b3c4d5e6f7g8h0"];
+            
+            syncLms({ 
+                courseId: selectedCourse, 
+                attendedStudentIds: mockAttendedIds 
+            });
+        }, 1500);
     };
 
     const columns = [
-        { header: "Platform", accessorKey: "platform" as keyof typeof LECTURER_SYNC_HISTORY[0], className: "font-semibold" },
-        { header: "Course", accessorKey: "course" as keyof typeof LECTURER_SYNC_HISTORY[0] },
-        { header: "Date & Time", cell: (item: typeof LECTURER_SYNC_HISTORY[0]) => <span className="text-slate-500 whitespace-nowrap">{item.date} • {item.time}</span> },
-        { header: "Records Synced", accessorKey: "studentsSynced" as keyof typeof LECTURER_SYNC_HISTORY[0], className: "text-center" },
+        { header: "Platform", accessorKey: "platform" as const, className: "font-semibold" },
+        { header: "Course", accessorKey: "course" as const },
+        { header: "Date & Time", cell: (item: any) => <span className="text-slate-500 whitespace-nowrap">{item.date} • {item.time}</span> },
+        { header: "Records Synced", accessorKey: "studentsSynced" as const, className: "text-center" },
         {
             header: "Status",
-            cell: (item: typeof LECTURER_SYNC_HISTORY[0]) => (
+            cell: (item: any) => (
                 <Badge variant={item.status === "Success" ? "success" : "danger"} className="whitespace-nowrap">
                     {item.status}
                 </Badge>
@@ -181,7 +191,7 @@ export default function LecturerIntegrations() {
                                             value={selectedCourse}
                                             onChange={setSelectedCourse}
                                             placeholder="Select course to sync..."
-                                            options={LECTURER_COURSES.map(c => ({ label: `${c.code} - ${c.title}`, value: c.id }))}
+                                            options={courses.map((c: any) => ({ label: `${c.code} - ${c.title}`, value: c.id }))}
                                         />
                                     </div>
                                     <div>
@@ -221,7 +231,12 @@ export default function LecturerIntegrations() {
                                 <Clock className="w-5 h-5 text-slate-400" />
                                 Synchronization History
                             </h3>
-                            <div className="bg-white ring-1 ring-slate-200 rounded-lg overflow-hidden shadow-sm">
+                            <div className="bg-white ring-1 ring-slate-200 rounded-lg overflow-hidden shadow-sm relative">
+                                {isLoadingHistory && (
+                                    <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                                        <div className="w-8 h-8 rounded-full border-4 border-babcock-blue/30 border-t-babcock-blue animate-spin" />
+                                    </div>
+                                )}
                                 <DataTable
                                     data={syncHistory}
                                     columns={columns}

@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+    getDashboard,
     getDashboardStats,
     getHistory,
     getCourses,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.use(protect, authorizeRole('Student'));
 
+router.get('/dashboard', getDashboard);
 router.get('/stats', getDashboardStats);
 router.get('/history', getHistory);
 router.get('/courses', getCourses);

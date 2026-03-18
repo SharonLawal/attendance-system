@@ -1,5 +1,5 @@
 const express = require('express');
-const { createCourse, getMyCourses, updateCourse, importStudents, getPendingStudents, resolvePending } = require('../controllers/courseController');
+const { createCourse, getMyCourses, updateCourse, importStudents, getPendingCheckIns, resolvePendingCheckIn } = require('../controllers/courseController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -12,7 +12,7 @@ router.get('/my-courses', getMyCourses);
 router.put('/:id', updateCourse);
 
 router.post('/:id/roster', importStudents);
-router.get('/:id/pending', getPendingStudents);
-router.post('/:id/resolve-pending', resolvePending);
+router.get('/:id/pending', getPendingCheckIns);
+router.post('/:id/resolve-pending', resolvePendingCheckIn);
 
 module.exports = router;

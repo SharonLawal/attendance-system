@@ -4,10 +4,14 @@ import React from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { CalendarDays, MapPin, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { WEEKDAYS, SCHEDULE_DATA } from "@/lib/demodata";
+import { Button } from "@/components/ui/Button";
+import { WEEKDAYS } from "@/lib/demodata";
+import { useStudentSchedule } from "@/hooks/useStudentSchedule";
+import { Loader2, RefreshCcw } from "lucide-react";
 
 export default function StudentSchedule() {
   const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const { data, isLoading, error, refetch } = useStudentSchedule();
 
   return (
     <DashboardLayout role="student">
@@ -20,11 +24,25 @@ export default function StudentSchedule() {
           <p className="text-slate-500 mt-1">Your weekly timetable and automated class reminders.</p>
         </div>
 
-        <div className="bg-white border text-left border-slate-200 rounded-lg p-6 shadow-sm">
-          <div className="flex flex-col space-y-8">
-            {WEEKDAYS.map((day) => {
-              const dayClasses = SCHEDULE_DATA.filter((c) => c.day === day)
-                .sort((a, b) => a.time.localeCompare(b.time));
+        {isLoading ? (
+          <div className="w-full h-64 flex flex-col items-center justify-center bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+            <Loader2 className="w-8 h-8 animate-spin text-babcock-blue mb-4" />
+            <p className="text-slate-500 font-medium">Loading your schedule...</p>
+          </div>
+        ) : error || !data ? (
+          <div className="w-full bg-red-50 p-6 rounded-lg border border-red-100 flex flex-col items-center">
+            <h3 className="text-red-800 font-bold mb-2">Failed to load schedule</h3>
+            <Button onClick={() => refetch()} variant="outline" className="gap-2 mt-4 bg-white">
+              <RefreshCcw className="w-4 h-4" />
+              Try Again
+            </Button>
+          </div>
+        ) : (
+          <div className="bg-white border text-left border-slate-200 rounded-lg p-6 shadow-sm">
+            <div className="flex flex-col space-y-8">
+              {WEEKDAYS.map((day) => {
+                const dayClasses = data.filter((c: any) => c.day === day)
+                  .sort((a: any, b: any) => a.time.localeCompare(b.time));
               const isToday = day === currentDay;
 
               return (
@@ -39,22 +57,22 @@ export default function StudentSchedule() {
 
                   {dayClasses.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {dayClasses.map((cls, idx) => (
+                      {dayClasses.map((cls: any, idx: number) => (
                         <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg p-4 hover:border-babcock-blue/50 transition-colors group">
                           <div className="flex justify-between items-start mb-2">
                             <Badge variant={cls.type === "Lecture" ? "neutral" : cls.type === "Lab" ? "default" : "warning"} className="px-2 py-0 border-transparent">
-                              {cls.type}
+                              {cls.type || "Lecture"}
                             </Badge>
                             <div className="flex items-center text-slate-500 text-xs font-semibold gap-1 bg-white px-2 py-1 rounded shadow-sm border border-slate-100">
                               <Clock className="w-3 h-3" />
-                              {cls.time.split(' - ')[0]}
+                              {cls.time?.split(' - ')[0] || "TBA"}
                             </div>
                           </div>
-                          <h4 className="font-bold text-slate-800 text-sm">{cls.course}</h4>
-                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{cls.title}</p>
+                          <h4 className="font-bold text-slate-800 text-sm">{cls.course || "Unknown"}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{cls.title || "No Title"}</p>
                           <div className="flex items-center gap-1 mt-3 text-xs text-slate-600 font-medium bg-slate-200/50 w-fit px-2 py-1 rounded-md">
                             <MapPin className="w-3 h-3 text-slate-400" />
-                            {cls.room}
+                            {cls.room || "TBA"}
                           </div>
                         </div>
                       ))}
@@ -67,8 +85,9 @@ export default function StudentSchedule() {
                 </div>
               );
             })}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </DashboardLayout>

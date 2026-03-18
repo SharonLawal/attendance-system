@@ -36,7 +36,22 @@ const getUsers = asyncHandler(async (req, res) => {
     const page = req.query.page ? parseInt(req.query.page) : 1;
     const skip = (page - 1) * limit;
 
-    const users = await User.find()
+    const query = {};
+
+    if (req.query.role && req.query.role.toLowerCase() !== 'all') {
+        const roleStr = req.query.role.toLowerCase();
+        // Capitalize for DB match
+        query.role = roleStr.charAt(0).toUpperCase() + roleStr.slice(1);
+    }
+
+    if (req.query.search) {
+        query.$or = [
+            { fullName: { $regex: req.query.search, $options: 'i' } },
+            { universityId: { $regex: req.query.search, $options: 'i' } }
+        ];
+    }
+
+    const users = await User.find(query)
         .select('-passwordHash')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -50,7 +65,7 @@ const getUsers = asyncHandler(async (req, res) => {
         status: u.accountStatus || 'Active', // From the newly added field
     }));
 
-    const total = await User.countDocuments();
+    const total = await User.countDocuments(query);
 
     res.json({
         users: formattedUsers,

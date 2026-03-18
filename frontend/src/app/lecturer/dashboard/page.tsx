@@ -10,8 +10,9 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { toast } from "sonner";
-import { CLASSROOM_LOCATIONS } from "@/lib/demodata";
-import apiClient from "@/lib/axios";
+import api from "@/lib/axios";
+import { LiveAttendeesTable } from "@/components/lecturer/LiveAttendeesTable";
+import { useLecturerCourses, useLecturerDashboard, useLiveSessionAttendees, useClassrooms } from "@/hooks/useLecturerData";
 import { CreateCourseModal } from "@/components/lecturer/CreateCourseModal";
 import { EditCourseModal } from "@/components/lecturer/EditCourseModal";
 import { ManageCourseModal } from "@/components/lecturer/ManageCourseModal";
@@ -20,13 +21,16 @@ export default function LecturerDashboard() {
   const [sessionActive, setSessionActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [otc, setOtc] = useState("");
-  const [activeSessionId, setActiveSessionId] = useState("");
-  const [checkedInCount, setCheckedInCount] = useState(0);
-  const totalStudentsInClass = 45; // Hardcoded mock for GEDS 400
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
-  // Course Data State
-  const [courses, setCourses] = useState<any[]>([]);
-  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  // Queries
+  const { data: dashboardData, isLoading: isLoadingDashboard, refetch: refetchDashboard } = useLecturerDashboard();
+  const { data: coursesData, isLoading: isLoadingCourses, refetch: refetchCourses } = useLecturerCourses();
+  const { data: attendeesData, isLoading: isLoadingAttendees } = useLiveSessionAttendees(activeSessionId);
+  const { data: classroomsData } = useClassrooms();
+
+  const courses = coursesData || [];
+  const classrooms = classroomsData || [];
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -39,48 +43,39 @@ export default function LecturerDashboard() {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [sessionDuration, setSessionDuration] = useState("5");
 
-  // Fetch Teacher's Courses
-  const fetchCourses = async () => {
-    try {
-      setIsLoadingCourses(true);
-      const res = await apiClient.get('/api/courses/my-courses');
-      setCourses(res.data.data || []);
-    } catch (error) {
-      toast.error("Failed to fetch courses.");
-    } finally {
-      setIsLoadingCourses(false);
-    }
-  };
-
+  // Sync state with dashboard data
   useEffect(() => {
-    fetchCourses();
-  }, []);
+    if (dashboardData?.activeSession && !sessionActive) {
+      const active = dashboardData.activeSession;
+      setActiveSessionId(active.id);
+      setOtc(active.otcCode);
+      
+      const now = new Date();
+      const endTime = new Date(active.endTime);
+      const remainingSeconds = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
+      
+      setTimeLeft(remainingSeconds);
+      setSessionActive(remainingSeconds > 0);
+    }
+  }, [dashboardData, sessionActive]);
 
-  // Timer & Polling Simulation
+  // Sync live stats timestamp if polled
+  useEffect(() => {
+    // Note: Live attendees polling doesn't return time remaining currently.
+    // relying on local fallback clock.
+  }, [attendeesData]);
+
+  // Fallback local timer to smooth out 5s polling gaps
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    let pollInterval: NodeJS.Timeout;
 
     if (sessionActive && timeLeft > 0) {
       timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-
-      // Simulate WebSocket polling random increment
-      pollInterval = setInterval(() => {
-        setCheckedInCount((prev) => {
-          if (prev >= totalStudentsInClass) return prev;
-          // Random chance to increment
-          return Math.random() > 0.4 ? prev + 1 : prev;
-        });
-      }, 3000);
-
     } else if (timeLeft === 0 && sessionActive) {
       handleEndSession();
     }
 
-    return () => {
-      clearInterval(timer);
-      clearInterval(pollInterval);
-    };
+    return () => clearInterval(timer);
   }, [sessionActive, timeLeft]);
 
   const formatTime = (seconds: number) => {
@@ -102,10 +97,10 @@ export default function LecturerDashboard() {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
 
-      const loc = CLASSROOM_LOCATIONS.find(l => l.id === selectedLocation);
+      const loc = classrooms.find((l: any) => l.id === selectedLocation || l._id === selectedLocation);
       const radius = loc ? (loc.capacity > 100 ? 50 : 25) : 50;
 
-      const res = await apiClient.post('/api/sessions/create', {
+      const res = await api.post('/api/sessions/create', {
         courseId: selectedCourse,
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
@@ -117,10 +112,10 @@ export default function LecturerDashboard() {
       setOtc(data.otcCode);
       setActiveSessionId(data.sessionId);
       setTimeLeft(parseInt(sessionDuration) * 60);
-      setCheckedInCount(0);
       setSessionActive(true);
       setIsSessionModalOpen(false);
 
+      refetchDashboard();
       toast.success("Attendance Session Started successfully!");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to start session. Ensure you have location permissions enabled.");
@@ -133,13 +128,14 @@ export default function LecturerDashboard() {
         await apiClient.post(`/api/lecturer/end-session/${activeSessionId}`);
       }
       setSessionActive(false);
-      setActiveSessionId("");
+      setActiveSessionId(null);
+      refetchDashboard();
       toast.info("Active session has been closed.");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to end session cleanly.");
       // Force local clean anyway to prevent getting stuck
       setSessionActive(false);
-      setActiveSessionId("");
+      setActiveSessionId(null);
     }
   };
 
@@ -175,6 +171,56 @@ export default function LecturerDashboard() {
           </div>
         )}
       </div>
+
+      {/* Aggregate Stats Row */}
+      {!sessionActive && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                <BookOpen className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Total Courses</p>
+                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.totalCourses || 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                <Play className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Active Sessions</p>
+                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.activeSessions || 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Total Students</p>
+                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.totalStudents || 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Avg. Attendance</p>
+                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.averageAttendance || 0}%</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {!sessionActive ? (
         <div className="w-full">
@@ -291,16 +337,20 @@ export default function LecturerDashboard() {
                 </div>
               </div>
 
-              {/* Polling Mock Stat */}
-              <div className="w-full bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6">
-                <div className="flex justify-between items-end mb-2">
-                  <p className="text-sm font-semibold text-slate-600">Students Verified:</p>
-                  <p className="text-lg font-bold text-slate-900">{checkedInCount} <span className="text-sm font-medium text-slate-400">/ {totalStudentsInClass}</span></p>
+              {/* Live Attendees Data */}
+              {isLoadingAttendees ? (
+                   <div className="w-full bg-slate-50 p-12 rounded-lg border border-slate-100 mb-6 flex justify-center">
+                   <div className="w-8 h-8 rounded-full border-4 border-babcock-blue/30 border-t-babcock-blue animate-spin" />
+                 </div>
+              ) : attendeesData ? (
+                 <div className="w-full mb-6">
+                    <LiveAttendeesTable attendees={attendeesData.attendees} summary={attendeesData.summary} />
+                 </div>
+              ) : (
+                <div className="w-full bg-slate-50 p-12 rounded-lg border border-slate-100 mb-6 flex justify-center text-slate-500 font-medium">
+                  Failed to load attendees.
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.min((checkedInCount / totalStudentsInClass) * 100, 100)}%` }} />
-                </div>
-              </div>
+              )}
 
               <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button variant="outline" className="w-full gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold" onClick={handleExtendSession}>
@@ -333,7 +383,7 @@ export default function LecturerDashboard() {
                 <div className="w-72 h-56 bg-babcock-blue/20 border-2 border-babcock-blue border-dashed transform rotate-[-5deg] flex flex-col items-center justify-center shadow-lg relative z-10 backdrop-blur-[2px] transition-all">
                   <MapIcon className="w-8 h-8 text-babcock-blue mb-2" />
                   <span className="text-babcock-blue font-bold px-3 py-1 bg-white/90 rounded-full text-sm shadow-sm">
-                    {CLASSROOM_LOCATIONS.find(l => l.id === selectedLocation)?.name || "Babcock Business School"}
+                    {classrooms.find((l: any) => l.id === selectedLocation || l._id === selectedLocation)?.name || "Babcock Business School"}
                   </span>
                 </div>
 
@@ -351,14 +401,14 @@ export default function LecturerDashboard() {
       <CreateCourseModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={fetchCourses}
+        onSuccess={() => { refetchCourses(); refetchDashboard(); }}
       />
 
       {/* Course Editing Modal */}
       <EditCourseModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        onSuccess={fetchCourses}
+        onSuccess={refetchCourses}
         course={courseToEdit}
       />
 
@@ -366,7 +416,7 @@ export default function LecturerDashboard() {
       <ManageCourseModal
         isOpen={isManageModalOpen}
         onClose={() => setIsManageModalOpen(false)}
-        onSuccess={fetchCourses}
+        onSuccess={refetchCourses}
         course={courseToManage}
       />
 
@@ -408,7 +458,7 @@ export default function LecturerDashboard() {
               value={selectedLocation}
               onChange={setSelectedLocation}
               placeholder="Select physical venue..."
-              options={CLASSROOM_LOCATIONS.map(l => ({ label: l.name, value: l.id }))}
+              options={classrooms.map((l: any) => ({ label: l.name, value: l.id || l._id }))}
             />
 
             {/* Dynamic Mini-map UX Enhancement */}

@@ -7,9 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LecturerProfile() {
+    const { user } = useAuth();
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
+    const initials = user?.fullName?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "L";
 
     const handlePasswordUpdate = (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,13 +42,13 @@ export default function LecturerProfile() {
                             <div className="h-24 bg-babcock-blue absolute top-0 left-0 right-0 w-full" />
                             <CardContent className="pt-12 pb-8 flex flex-col items-center relative z-10">
                                 <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center text-4xl font-bold text-babcock-blue font-display shrink-0 mb-4">
-                                    JS
+                                    {initials}
                                 </div>
-                                <h2 className="text-xl font-bold font-display text-slate-800">Dr. Jane Smith</h2>
+                                <h2 className="text-xl font-bold font-display text-slate-800">{user?.fullName || "Staff Profile"}</h2>
                                 <p className="text-slate-500 font-medium text-sm mb-4">Senior Lecturer</p>
 
                                 <span className="bg-blue-50 text-babcock-blue tracking-wider font-mono px-3 py-1 rounded-full text-xs font-semibold mb-6">
-                                    STAFF-4001
+                                    {user?.universityId || "N/A"}
                                 </span>
 
                                 <div className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
@@ -78,7 +82,7 @@ export default function LecturerProfile() {
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1 block flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Institutional Email</label>
-                                    <p className="text-slate-800 font-medium">smithj@babcock.edu.ng</p>
+                                    <p className="text-slate-800 font-medium">{user?.email || "No email provided"}</p>
                                 </div>
                             </CardContent>
                         </Card>

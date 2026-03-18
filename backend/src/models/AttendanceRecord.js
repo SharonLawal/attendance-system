@@ -5,6 +5,7 @@ const attendanceRecordSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'AttendanceSession',
         required: true,
+        index: true
     },
     studentId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -14,14 +15,31 @@ const attendanceRecordSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['Present', 'Absent', 'Pending'],
+        default: 'Pending',
         required: true,
+        index: true
     },
     source: {
         type: String,
         enum: ['Manual_GPS', 'LMS_Sync'],
         required: true,
     },
-    timestamp: {
+    checkedInAt: {
+        type: Date,
+        default: Date.now,
+    },
+    coordinates: {
+        latitude: Number,
+        longitude: Number,
+        accuracy: Number
+    },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    approvedAt: Date,
+    rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    rejectedAt: Date,
+    rejectionReason: String,
+    deviceInfo: String,
+    createdAt: {
         type: Date,
         default: Date.now,
     },

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { DataTable } from "@/components/ui/DataTable";
-import { LECTURER_COURSES } from "@/lib/demodata";
+import { useLecturerCoursesSummary } from "@/hooks/useLecturerData";
 
 // Mock Student Drill-down Data
 const COURSE_STUDENTS = [
@@ -22,8 +22,10 @@ const COURSE_STUDENTS = [
 export default function LecturerCourses() {
     const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
+    const { data: courses = [], isLoading } = useLecturerCoursesSummary();
+
     const drillDownData = selectedCourseId ? COURSE_STUDENTS : [];
-    const courseDetails = LECTURER_COURSES.find(c => c.id === selectedCourseId);
+    const courseDetails = courses.find((c: any) => c.id === selectedCourseId);
 
     const studentColumns = [
         { header: "Student", accessorKey: "name" as keyof typeof COURSE_STUDENTS[0], className: "font-semibold text-slate-800" },
@@ -98,9 +100,14 @@ export default function LecturerCourses() {
                     </div>
                 ) : (
                     <>
-                        {LECTURER_COURSES.length > 0 ? (
+                        {isLoading ? (
+                            <div className="w-full py-20 flex flex-col items-center justify-center">
+                                <div className="w-8 h-8 rounded-full border-4 border-babcock-blue/30 border-t-babcock-blue animate-spin mb-4" />
+                                <p className="text-slate-500 font-medium">Loading courses...</p>
+                            </div>
+                        ) : courses.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {LECTURER_COURSES.map(course => (
+                                {courses.map((course: any) => (
                                     <Card
                                         key={course.id}
                                         className="group cursor-pointer hover:shadow-md hover:border-babcock-blue/50 transition-all active:scale-[0.98] border-slate-200"
