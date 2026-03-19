@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { CalendarDays, MapPin, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { WEEKDAYS } from "@/lib/demodata";
+const WEEKDAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 import { useStudentSchedule } from "@/hooks/useStudentSchedule";
 import { Loader2, RefreshCcw } from "lucide-react";
 

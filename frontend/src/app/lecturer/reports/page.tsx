@@ -12,7 +12,7 @@ import { ExportModal } from "@/components/ui/ExportModal";
 import { Pagination } from "@/components/ui/Pagination";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { FileText } from "lucide-react";
+
 import { useLecturerCoursesSummary } from "@/hooks/useLecturerData";
 
 
@@ -45,7 +45,7 @@ export default function LecturerReports() {
         <DashboardLayout role="lecturer">
             <div className="min-h-[calc(100vh-100px)] flex flex-col justify-center bg-neutral-50 p-6 rounded-2xl border border-dashed border-slate-300">
                 <EmptyState
-                    icon={FileText}
+                    icon="document"
                     title="No Reports Available"
                     description="Detailed cross-course reports are under development. Use the Active Session view to manage current class attendance."
                 />

@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/Breadcrumb";
 import { useAuth } from "@/context/AuthContext";
+import { getNotifications as fetchStudentNotifications } from '@/services/studentService';
 
 type RoleType = "student" | "lecturer" | "admin";
 
@@ -62,12 +63,8 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
 
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-    // Dummy notification data (should ideally come from an API/context)
-    const notifications = [
-        { id: 1, text: "Your attendance for GEDS400 was successful.", time: "2m ago", read: false },
-        { id: 2, text: "Prof. Nnamdi published a new assignment.", time: "1hr ago", read: false },
-        { id: 3, text: "System maintenance scheduled for midnight.", time: "1d ago", read: true },
-    ];
+    const [notifications, setNotifications] = useState<Array<any>>([]);
+    const [notificationsLoading, setNotificationsLoading] = useState(false);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -75,6 +72,35 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     useEffect(() => {
         setSidebarOpen(false);
     }, [pathname]);
+
+    // Fetch real notifications for students
+    useEffect(() => {
+        let mounted = true;
+        const load = async () => {
+            if (role !== 'student') return;
+            setNotificationsLoading(true);
+            try {
+                const res = await fetchStudentNotifications();
+                if (!mounted) return;
+                // res may be an array; normalize to { id, text, time, read }
+                const normalized = (Array.isArray(res) ? res : res.data || []).map((n: any) => ({
+                    id: n._id || n.id,
+                    text: n.message || n.text || '',
+                    time: new Date(n.createdAt || Date.now()).toLocaleString(),
+                    read: !!n.isRead
+                }));
+                setNotifications(normalized);
+            } catch (err) {
+                // swallow - keep notifications empty
+            } finally {
+                if (mounted) setNotificationsLoading(false);
+            }
+        };
+
+        load();
+
+        return () => { mounted = false; };
+    }, [role]);
 
     // Prevent body scroll when sidebar is open on mobile
     useEffect(() => {

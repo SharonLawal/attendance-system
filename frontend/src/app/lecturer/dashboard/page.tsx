@@ -10,7 +10,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { toast } from "sonner";
-import api from "@/lib/axios";
+import * as lecturerService from "@/services/lecturerService";
+import { generateGeoJSONCircle } from "@/lib/geo";
 import { LiveAttendeesTable } from "@/components/lecturer/LiveAttendeesTable";
 import { useLecturerCourses, useLecturerDashboard, useLiveSessionAttendees, useClassrooms } from "@/hooks/useLecturerData";
 import { CreateCourseModal } from "@/components/lecturer/CreateCourseModal";
@@ -100,15 +101,17 @@ export default function LecturerDashboard() {
       const loc = classrooms.find((l: any) => l.id === selectedLocation || l._id === selectedLocation);
       const radius = loc ? (loc.capacity > 100 ? 50 : 25) : 50;
 
-      const res = await api.post('/api/sessions/create', {
+      const polygon = generateGeoJSONCircle([position.coords.longitude, position.coords.latitude], radius);
+      const res = await lecturerService.createSession({
         courseId: selectedCourse,
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
         radiusInMeters: radius,
-        durationInMinutes: parseInt(sessionDuration)
+        durationInMinutes: parseInt(sessionDuration),
+        locationPolygon: polygon
       });
 
-      const data = res.data.data;
+      const data = res.data;
       setOtc(data.otcCode);
       setActiveSessionId(data.sessionId);
       setTimeLeft(parseInt(sessionDuration) * 60);
@@ -125,7 +128,7 @@ export default function LecturerDashboard() {
   const handleEndSession = async () => {
     try {
       if (activeSessionId) {
-        await apiClient.post(`/api/lecturer/end-session/${activeSessionId}`);
+        await lecturerService.endSession(activeSessionId);
       }
       setSessionActive(false);
       setActiveSessionId(null);
@@ -142,7 +145,7 @@ export default function LecturerDashboard() {
   const handleExtendSession = async () => {
     try {
       if (!activeSessionId) return;
-      await apiClient.post(`/api/lecturer/extend-session/${activeSessionId}`, { minutes: 5 });
+      await lecturerService.extendSession(activeSessionId, 5);
       setTimeLeft(prev => prev + 300); // add 5 minutes on the frontend clock
       toast.success("Session extended by 5 minutes.");
     } catch (error: any) {

@@ -44,19 +44,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = async (email: string, password: string, rememberMe?: boolean) => {
-        const response = await apiClient.post('/api/auth/login', {
-            email,
-            password,
-            rememberMe,
-        });
-        const userData = response.data.data;
-        setUser(userData);
-        return userData;
+        setIsLoading(true);
+        try {
+            const response = await apiClient.post('/api/auth/login', {
+                email,
+                password,
+                rememberMe,
+            });
+            const userData = response.data.data;
+            setUser(userData);
+            return userData;
+        } catch (err) {
+            setUser(null);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const register = async (data: any) => {
-        const response = await apiClient.post('/api/auth/register', data);
-        return response.data;
+        setIsLoading(true);
+        try {
+            const response = await apiClient.post('/api/auth/register', data);
+            // Backend sets cookies and returns user data on successful registration
+            if (response.data && response.data.data) {
+                setUser(response.data.data);
+            }
+            return response.data;
+        } catch (err) {
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const logout = async () => {

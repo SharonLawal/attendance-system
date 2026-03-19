@@ -11,12 +11,12 @@ const {
     resetPassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
-const { otpLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
+const { otpLimiter, passwordResetLimiter, loginLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
 router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/login', loginLimiter, loginUser);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', otpLimiter, resendVerification);
 router.post('/forgot-password', passwordResetLimiter, forgotPassword);

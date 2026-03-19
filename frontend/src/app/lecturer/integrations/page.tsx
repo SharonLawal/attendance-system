@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "sonner";
 import { useLecturerCoursesSummary, useLecturerSyncHistory } from "@/hooks/useLecturerData";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import apiClient from "@/lib/axios";
+import * as lecturerService from '@/services/lecturerService';
 
 export default function LecturerIntegrations() {
     const [isGoogleConnected, setIsGoogleConnected] = useState(true);
@@ -28,15 +28,15 @@ export default function LecturerIntegrations() {
 
     const { mutate: syncLms, isPending: isSyncing } = useMutation({
         mutationFn: async (data: { courseId: string, attendedStudentIds: string[] }) => {
-            const response = await apiClient.post('/api/lms/sync', data);
-            return response.data;
-        },
-        onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['lecturer', 'syncHistory'] });
-            toast.success(`Successfully synced ${data.syncedCount} attendance records!`);
-            setSelectedCourse("");
-            setSelectedPlatform("");
-        },
+                const response = await lecturerService.postLmsSync(data.courseId, data.attendedStudentIds);
+                return response;
+            },
+            onSuccess: (data) => {
+                queryClient.invalidateQueries({ queryKey: ['lecturer', 'syncHistory'] });
+                toast.success(`Successfully synced ${data.syncedCount} attendance records!`);
+                setSelectedCourse("");
+                setSelectedPlatform("");
+            },
         onError: (err: any) => {
             const message = err.response?.data?.message || err.message || "Failed to synchronize";
             toast.error(message);

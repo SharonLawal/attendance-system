@@ -24,7 +24,46 @@ const passwordResetLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// Login limiter to prevent brute-force attempts
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // max 10 login attempts per IP per window
+    message: {
+        success: false,
+        message: 'Too many login attempts. Please try again in 15 minutes.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Generic API limiter to protect the API from abuse (adjust limits as needed)
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 200, // max 200 requests per IP per minute
+    message: {
+        success: false,
+        message: 'Too many requests from this IP, please slow down.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Attendance limiter to prevent spamming mark requests
+const attendanceLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 30, // max 30 mark attendance attempts per IP per minute
+    message: {
+        success: false,
+        message: 'Too many attendance marking attempts. Please wait a moment before retrying.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 module.exports = {
     otpLimiter,
-    passwordResetLimiter
+    passwordResetLimiter,
+    loginLimiter,
+    apiLimiter,
+    attendanceLimiter
 };

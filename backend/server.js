@@ -4,6 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./src/config/db');
 const { errorHandler } = require('./src/middleware/errorHandler');
+const { apiLimiter } = require('./src/middleware/rateLimiter');
 
 // Route Imports
 const authRoutes = require('./src/routes/authRoutes');
@@ -31,6 +32,9 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Apply a generic API rate limiter to all /api routes to protect against abuse
+app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);

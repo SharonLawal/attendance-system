@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Clock, ShieldCheck, MapPin, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -11,9 +11,8 @@ import { Alert } from "@/components/ui/Alert";
 import { OTPInput } from "@/components/ui/OTPInput";
 import { VerificationProgress, VerificationState } from "@/components/ui/VerificationProgress";
 import { DataTable } from "@/components/ui/DataTable";
-import apiClient from "@/lib/axios";
-
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
+import { getActiveSession, markAttendance as markAttendanceService } from '@/services/studentService';
 import { Loader2, RefreshCcw } from "lucide-react";
 
 export default function StudentDashboard() {
@@ -23,12 +22,43 @@ export default function StudentDashboard() {
   const [verificationState, setVerificationState] = useState<VerificationState>("idle");
   const [gpsSamples, setGpsSamples] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
+  const [activeSession, setActiveSession] = useState<any>(null);
 
   const resetVerification = () => {
     setVerificationState("idle");
     setGpsSamples(0);
     setErrorMessage("");
   };
+
+  // Poll for active session every 5 seconds
+  useEffect(() => {
+    let mounted = true;
+    let timer: any = null;
+
+    const poll = async () => {
+      try {
+        const res = await getActiveSession();
+        if (!mounted) return;
+        // Normalize response: either { active: false } or the active session object
+        if (res && res.active) {
+          setActiveSession(res);
+        } else {
+          setActiveSession(null);
+        }
+      } catch (err) {
+        // ignore polling errors
+      } finally {
+        timer = setTimeout(poll, 5000);
+      }
+    };
+
+    poll();
+
+    return () => {
+      mounted = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
   const simulateGeolocation = async () => {
     resetVerification();
@@ -58,29 +88,28 @@ export default function StudentDashboard() {
           setVerificationState("verifying");
 
           try {
-            const res = await apiClient.post('/api/attendance/mark', {
-              otcCode: otc,
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            });
+            const res = await markAttendanceService(otc, position.coords.latitude, position.coords.longitude);
 
             setVerificationState("success");
 
-            if (res.data.status === 'pending') {
-              // Throw the yellow warning for Course Pending Roster
-              toast.warning(res.data.message || "Attendance marked as pending. Awaiting lecturer approval.", {
+            // Backend returns success or pending state in top-level data
+            const status = res.status || (res.data && res.data.status) || 'success';
+            const message = res.message || (res.data && res.data.message) || '';
+
+            if (status === 'pending') {
+              toast.warning(message || "Attendance marked as pending. Awaiting lecturer approval.", {
                 duration: 8000,
                 style: { backgroundColor: '#fef3c7', borderColor: '#fcd34d', color: '#92400e' }
               });
               setTimeout(resetVerification, 4000);
             } else {
-              toast.success("Successfully marked present!");
+              toast.success(message || "Successfully marked present!");
               setTimeout(resetVerification, 3000);
             }
           } catch (error: any) {
             setVerificationState("error");
             setErrorMessage(error.response?.data?.message || "Failed to verify location or session has expired.");
-            toast.error("Verification failed");
+            toast.error(error.response?.data?.message || "Verification failed");
           }
         }
       }, 1000);

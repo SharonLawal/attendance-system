@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/axios';
+import * as lecturerService from '@/services/lecturerService';
 import { transformLecturerDashboard } from '@/utils/apiTransformers';
 import { toast } from 'sonner';
 
@@ -7,8 +8,8 @@ export function useLecturerDashboard() {
   return useQuery({
     queryKey: ['lecturer', 'dashboard'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/lecturer/dashboard');
-      return transformLecturerDashboard(response.data);
+      const response = await lecturerService.getDashboard();
+      return transformLecturerDashboard(response);
     },
     staleTime: 2 * 60 * 1000, 
   });
@@ -22,8 +23,8 @@ export function useLiveSessionAttendees(sessionId: string | null) {
     queryKey: ['lecturer', 'session', sessionId, 'attendees'],
     queryFn: async () => {
       if (!sessionId) return null;
-      const response = await apiClient.get(`/api/lecturer/live-session/${sessionId}/attendees`);
-      return response.data.data;
+      const response = await lecturerService.getLiveSession(sessionId);
+      return response.data;
     },
     enabled: !!sessionId,
     refetchInterval: 5000, // Poll every 5 seconds
@@ -38,8 +39,8 @@ export function useClassrooms() {
   return useQuery({
     queryKey: ['lecturer', 'classrooms'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/lecturer/classrooms');
-      return response.data;
+      const response = await lecturerService.getClassrooms();
+      return response;
     },
     staleTime: 10 * 60 * 1000, // Cache for 10 minutes
   });
@@ -53,8 +54,8 @@ export function useApprovePendingAttendance() {
 
   return useMutation({
     mutationFn: async (recordId: string) => {
-      const response = await apiClient.post(`/api/lecturer/attendance/${recordId}/approve`);
-      return response.data;
+      const response = await lecturerService.approveAttendance(recordId);
+      return response;
     },
     onMutate: async (recordId) => {
       // Cancel ongoing queries
@@ -108,8 +109,8 @@ export function useRejectPendingAttendance() {
 
   return useMutation({
     mutationFn: async ({ recordId, reason }: { recordId: string; reason?: string }) => {
-      const response = await apiClient.post(`/api/lecturer/attendance/${recordId}/reject`, { reason });
-      return response.data;
+      const response = await lecturerService.rejectAttendance(recordId, reason);
+      return response;
     },
     onMutate: async ({ recordId }) => {
       await queryClient.cancelQueries({ queryKey: ['lecturer', 'session'] });
@@ -152,8 +153,8 @@ export function useLecturerCourses() {
   return useQuery({
     queryKey: ['lecturer', 'courses'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/courses/my-courses');
-      return response.data.data;
+      const response = await lecturerService.getMyCourses();
+      return response.data;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -163,8 +164,8 @@ export function useLecturerCoursesSummary() {
   return useQuery({
     queryKey: ['lecturer', 'coursesSummary'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/lecturer/courses-summary');
-      return response.data;
+      const response = await lecturerService.getCoursesSummary();
+      return response;
     },
     staleTime: 2 * 60 * 1000,
   });
@@ -174,8 +175,8 @@ export function useLecturerSyncHistory() {
   return useQuery({
     queryKey: ['lecturer', 'syncHistory'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/lecturer/sync-history');
-      return response.data;
+      const response = await lecturerService.getSyncHistory();
+      return response;
     },
     staleTime: 5 * 60 * 1000,
   });
