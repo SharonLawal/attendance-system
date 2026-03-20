@@ -1,5 +1,11 @@
 import apiClient from '@/lib/axios';
 
+export const getDashboard = async () => {
+  const res = await apiClient.get('/api/student/dashboard');
+  return res.data;
+};
+
+// Legacy - kept for compatibility but dashboard now uses getDashboard
 export const getDashboardStats = async () => {
   const res = await apiClient.get('/api/student/stats');
   return res.data;

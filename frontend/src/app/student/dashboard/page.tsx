@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Clock, ShieldCheck, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import { Clock, ShieldCheck, MapPin, Calendar as CalendarIcon, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -39,7 +40,6 @@ export default function StudentDashboard() {
       try {
         const res = await getActiveSession();
         if (!mounted) return;
-        // Normalize response: either { active: false } or the active session object
         if (res && res.active) {
           setActiveSession(res);
         } else {
@@ -75,7 +75,6 @@ export default function StudentDashboard() {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
 
-      // Step 2: Averaging Signal (takes 5 seconds total)
       setVerificationState("averaging");
       let currentSample = 0;
 
@@ -92,14 +91,12 @@ export default function StudentDashboard() {
 
             setVerificationState("success");
 
-            // Backend returns success or pending state in top-level data
             const status = res.status || (res.data && res.data.status) || 'success';
             const message = res.message || (res.data && res.data.message) || '';
 
             if (status === 'pending') {
               toast.warning(message || "Attendance marked as pending. Awaiting lecturer approval.", {
                 duration: 8000,
-                style: { backgroundColor: '#fef3c7', borderColor: '#fcd34d', color: '#92400e' }
               });
               setTimeout(resetVerification, 4000);
             } else {
@@ -174,7 +171,7 @@ export default function StudentDashboard() {
     <DashboardLayout role="student">
       <div className="space-y-6">
 
-        {/* Dynamic Warning Alert */}
+        {/* Attendance Warning Alert */}
         {data.stats.attendancePercentage < 75 && (
           <Alert
             variant="error"
@@ -185,7 +182,7 @@ export default function StudentDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Main Hero Card for Attendance */}
+          {/* Mark Attendance Card */}
           <div className="lg:col-span-2">
             <Card className="h-full relative overflow-hidden border-0 shadow-md ring-1 ring-slate-200">
               <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
@@ -196,9 +193,11 @@ export default function StudentDashboard() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                   <div>
                     <CardTitle className="text-2xl h-8">Mark Attendance</CardTitle>
-                    <CardDescription className="text-base h-6">Enter the 6-digit alphanumeic code provided</CardDescription>
+                    <CardDescription className="text-base h-6">Enter the 6-digit alphanumeric code from your lecturer</CardDescription>
                   </div>
-                  <Badge variant="success" className="w-fit h-fit"><MapPin className="w-3.5 h-3.5 mr-1" /> GPS Active</Badge>
+                  <Badge variant="success" className="w-fit h-fit">
+                    <MapPin className="w-3.5 h-3.5 mr-1" /> GPS Active
+                  </Badge>
                 </div>
               </CardHeader>
 
@@ -217,8 +216,17 @@ export default function StudentDashboard() {
                     type="submit"
                     variant="babcock"
                     className="w-full text-lg shadow-xl shadow-babcock-blue/20"
-                    disabled={verificationState === "requesting" || verificationState === "averaging" || verificationState === "verifying" || otc.length !== 6}
-                    isLoading={verificationState === "requesting" || verificationState === "averaging" || verificationState === "verifying"}
+                    disabled={
+                      verificationState === "requesting" ||
+                      verificationState === "averaging" ||
+                      verificationState === "verifying" ||
+                      otc.length !== 6
+                    }
+                    isLoading={
+                      verificationState === "requesting" ||
+                      verificationState === "averaging" ||
+                      verificationState === "verifying"
+                    }
                   >
                     {!["requesting", "averaging", "verifying"].includes(verificationState) && (
                       <MapPin className="w-5 h-5 mr-2" />
@@ -239,6 +247,7 @@ export default function StudentDashboard() {
           {/* Right Column: Stats & Schedule */}
           <div className="lg:col-span-1 flex flex-col gap-6">
 
+            {/* Quick Stats */}
             <div className="bg-babcock-blue rounded-lg border border-blue-900 shadow-xl p-6 text-white relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
               <div className="relative z-10">
@@ -248,16 +257,22 @@ export default function StudentDashboard() {
                 <div className="space-y-4">
                   <div className="bg-white/10 rounded-lg p-4 border border-white/5 backdrop-blur-sm">
                     <p className="text-blue-100 text-sm">Overall Attendance</p>
-                    <p className="text-3xl font-bold text-white mt-1 select-all">{data.stats.attendancePercentage}%</p>
+                    <p className="text-3xl font-bold text-white mt-1 select-all">
+                      {data.stats.attendancePercentage}%
+                    </p>
                   </div>
                   <div className="bg-white/10 rounded-lg p-4 border border-white/5 backdrop-blur-sm">
                     <p className="text-blue-100 text-sm">Classes Attended</p>
-                    <p className="text-3xl font-bold text-white mt-1">{data.stats.attendedClasses} <span className="text-lg text-blue-200 font-normal">/ {data.stats.totalClasses}</span></p>
+                    <p className="text-3xl font-bold text-white mt-1">
+                      {data.stats.attendedClasses}{" "}
+                      <span className="text-lg text-blue-200 font-normal">/ {data.stats.totalClasses}</span>
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Today's Schedule */}
             <Card className="flex-1 border-0 shadow-sm ring-1 ring-slate-200">
               <CardHeader className="py-4 border-b border-slate-100">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -267,17 +282,28 @@ export default function StudentDashboard() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-slate-100">
-                  {data.todaysSchedule.length === 0 ? (
-                    <div className="p-6 text-center text-slate-500 font-medium">No classes scheduled for today.</div>
+                  {!data.todaysSchedule || data.todaysSchedule.length === 0 ? (
+                    <div className="p-6 text-center text-slate-500 font-medium text-sm">
+                      No classes scheduled for today.
+                    </div>
                   ) : (
                     data.todaysSchedule.map((cls: any, idx: number) => (
-                      <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex items-start justify-between group cursor-pointer">
+                      <div
+                        key={idx}
+                        className="p-4 hover:bg-slate-50 transition-colors flex items-start justify-between cursor-pointer"
+                      >
                         <div>
-                          <h4 className="font-bold text-slate-800 text-sm">{cls.courseCode}</h4>
-                          <p className="text-xs text-slate-500 mt-0.5">{cls.courseName}</p>
+                          <h4 className="font-bold text-slate-800 text-sm">
+                            {cls.courseCode || cls.course?.courseCode}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {cls.courseName || cls.course?.courseName}
+                          </p>
                           <div className="flex items-center gap-3 mt-2">
                             <Badge variant="neutral">{cls.startTime}</Badge>
-                            <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> {cls.room}</span>
+                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {cls.room}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -286,7 +312,6 @@ export default function StudentDashboard() {
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
 
@@ -297,11 +322,15 @@ export default function StudentDashboard() {
               <Clock className="w-5 h-5 text-babcock-gold" />
               Recent History
             </CardTitle>
-            <Button variant="ghost" size="sm" className="hidden sm:flex">View All</Button>
+            <Link href="/student/history">
+              <Button variant="ghost" size="sm" className="gap-1 text-babcock-blue hover:text-babcock-blue/80">
+                View All <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
           </CardHeader>
           <CardContent className="p-0">
             <DataTable
-              data={data.recentHistory}
+              data={data.recentHistory || []}
               columns={historyColumns}
               className="border-0 shadow-none rounded-none border-t border-slate-100"
               emptyTitle="No attendance records yet."

@@ -16,11 +16,25 @@ import {
   ArrowRight,
   Loader2,
   GraduationCap,
+  Building2,
 } from "lucide-react";
 import { signupSchema, SignupFormData } from "@/lib/validations/auth";
 import { useAuth } from "@/context/AuthContext";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { toast } from "sonner";
+
+const BABCOCK_SCHOOLS = [
+  "School of Computing & Engineering Sciences",
+  "School of Education and Humanities",
+  "School of Law & Security Studies",
+  "School of Management Sciences",
+  "School of Public & Applied Health",
+  "Veronica Adeleke School of Social Sciences",
+  "School of Science and Technology",
+  "School of Nursing Sciences",
+  "Benjamin Carson School of Medicine",
+  "College of Postgraduate Studies",
+];
 
 export default function SignupPage() {
   const router = useRouter();
@@ -45,6 +59,7 @@ export default function SignupPage() {
       role: "Student",
       password: "",
       confirmPassword: "",
+      school: "",
       terms: false as unknown as true,
     },
   });
@@ -68,13 +83,15 @@ export default function SignupPage() {
         password: data.password,
         role: data.role,
         universityId: data.idNumber,
+        school: data.school || undefined,
       });
 
-      // Registration successful, fire toast and redirect to login
       toast.success("Account created successfully! Please log in.");
-      router.push('/login');
+      router.push("/login");
     } catch (error: any) {
-      setServerError(error.response?.data?.message || "An unexpected error occurred.");
+      setServerError(
+        error.response?.data?.message || "An unexpected error occurred."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -84,16 +101,13 @@ export default function SignupPage() {
     <div className="flex h-screen w-full bg-white">
       {/* Left Side */}
       <div className="hidden lg:flex relative w-1/2 h-full bg-[#051025] flex-col justify-between p-16 overflow-hidden">
-        {/* Abstract Background Pattern */}
         <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         <div className="absolute top-0 left-0 -z-10 h-[500px] w-[500px] bg-primary opacity-20 blur-[120px]"></div>
 
-        {/* Floating Icon */}
         <div className="absolute top-1/4 right-1/4 animate-bounce duration-[4000ms]">
           <GraduationCap size={180} className="text-white/5 rotate-12" />
         </div>
 
-        {/* Top Logo Area */}
         <div className="relative z-10 flex items-center gap-3">
           <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/10">
             <MapPin size={20} className="text-yellow-400" />
@@ -103,7 +117,6 @@ export default function SignupPage() {
           </span>
         </div>
 
-        {/* Hero Text */}
         <div className="relative z-10">
           <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
             Start Your <br />
@@ -136,9 +149,7 @@ export default function SignupPage() {
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
                 Create Account
               </h2>
-              <p className="text-slate-500">
-                Join the platform to get started.
-              </p>
+              <p className="text-slate-500">Join the platform to get started.</p>
             </div>
 
             {/* Error Banner */}
@@ -159,10 +170,11 @@ export default function SignupPage() {
                     key={role}
                     type="button"
                     onClick={() => setValue("role", role)}
-                    className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${selectedRole === role
-                      ? "bg-white text-primary shadow-sm border border-slate-200"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                      }`}
+                    className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
+                      selectedRole === role
+                        ? "bg-white text-primary shadow-sm border border-slate-200"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                    }`}
                   >
                     {role}
                   </button>
@@ -175,6 +187,7 @@ export default function SignupPage() {
               onSubmit={handleSubmit(onSubmit)}
               className="flex flex-col gap-4"
             >
+              {/* Full Name */}
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">
                   Full Name
@@ -198,6 +211,7 @@ export default function SignupPage() {
                 )}
               </div>
 
+              {/* Email */}
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">
                   Babcock Email
@@ -221,6 +235,7 @@ export default function SignupPage() {
                 )}
               </div>
 
+              {/* ID Number */}
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">
                   {getIDLabel()}
@@ -244,6 +259,41 @@ export default function SignupPage() {
                 )}
               </div>
 
+              {/* School / Faculty — only for Lecturers */}
+              {selectedRole === "Lecturer" && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-slate-700">
+                    School / Faculty <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <Building2
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none"
+                    />
+                    <select
+                      {...register("school")}
+                      className={`w-full pl-11 pr-4 py-3.5 bg-white border ${errors.school ? "border-red-500" : "border-slate-300 focus:ring-primary/20 focus:border-primary"} rounded-lg focus:outline-none focus:ring-4 transition-all text-slate-900 font-medium appearance-none`}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Select your school...
+                      </option>
+                      {BABCOCK_SCHOOLS.map((school) => (
+                        <option key={school} value={school}>
+                          {school}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.school && (
+                    <p className="text-xs text-red-500 font-medium ml-1">
+                      {errors.school.message}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Password */}
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">
                   Password
@@ -275,6 +325,7 @@ export default function SignupPage() {
                 <PasswordStrengthIndicator password={watchPassword} />
               </div>
 
+              {/* Confirm Password */}
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700">
                   Confirm Password
@@ -295,7 +346,11 @@ export default function SignupPage() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                   >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showConfirmPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
@@ -305,6 +360,7 @@ export default function SignupPage() {
                 )}
               </div>
 
+              {/* Terms */}
               <div className="flex items-start gap-3 mt-2">
                 <input
                   {...register("terms")}
@@ -366,4 +422,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

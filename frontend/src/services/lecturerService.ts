@@ -66,3 +66,51 @@ export const rejectAttendance = async (recordId: string, reason?: string) => {
   const res = await apiClient.post(`/api/lecturer/attendance/${recordId}/reject`, { reason });
   return res.data;
 };
+
+// ─── Google Classroom ────────────────────────────────────────────────────────
+
+export const getGoogleConnectionStatus = async () => {
+  const res = await apiClient.get('/api/lms/google/status');
+  return res.data; // { connected: boolean, email: string | null }
+};
+
+export const getGoogleAuthUrl = async () => {
+  const res = await apiClient.get('/api/lms/google/auth');
+  return res.data; // { url: string }
+};
+
+export const disconnectGoogle = async () => {
+  const res = await apiClient.delete('/api/lms/google/disconnect');
+  return res.data;
+};
+
+export const getGoogleCourses = async () => {
+  const res = await apiClient.get('/api/lms/google/courses');
+  return res.data; // { courses: [...] }
+};
+
+export const getGoogleCourseWork = async (googleCourseId: string) => {
+  const res = await apiClient.get(`/api/lms/google/courses/${googleCourseId}/coursework`);
+  return res.data; // { courseWork: [...] }
+};
+
+export const syncGoogleRoster = async (googleCourseId: string, veriPointCourseId: string) => {
+  const res = await apiClient.post('/api/lms/google/sync-roster', {
+    googleCourseId,
+    veriPointCourseId,
+  });
+  return res.data;
+};
+
+export const syncGoogleAttendance = async (
+  googleCourseId: string,
+  veriPointCourseId: string,
+  courseWorkId: string
+) => {
+  const res = await apiClient.post('/api/lms/google/sync-attendance', {
+    googleCourseId,
+    veriPointCourseId,
+    courseWorkId,
+  });
+  return res.data;
+};

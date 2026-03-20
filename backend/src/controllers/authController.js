@@ -6,6 +6,19 @@ const asyncHandler = require('express-async-handler');
 const { z } = require('zod');
 const sendEmail = require('../utils/sendEmail');
 
+const BABCOCK_SCHOOLS = [
+    'School of Computing & Engineering Sciences',
+    'School of Education and Humanities',
+    'School of Law & Security Studies',
+    'School of Management Sciences',
+    'School of Public & Applied Health',
+    'Veronica Adeleke School of Social Sciences',
+    'School of Science and Technology',
+    'School of Nursing Sciences',
+    'Benjamin Carson School of Medicine',
+    'College of Postgraduate Studies',
+];
+
 // Validation Schemas
 const registerSchema = z.object({
     fullName: z.string().min(3),
@@ -18,6 +31,18 @@ const registerSchema = z.object({
         .regex(/[\W_]/),
     role: z.enum(['Student', 'Lecturer', 'Admin']),
     universityId: z.string().min(3),
+    school: z.enum([
+        'School of Computing & Engineering Sciences',
+        'School of Education and Humanities',
+        'School of Law & Security Studies',
+        'School of Management Sciences',
+        'School of Public & Applied Health',
+        'Veronica Adeleke School of Social Sciences',
+        'School of Science and Technology',
+        'School of Nursing Sciences',
+        'Benjamin Carson School of Medicine',
+        'College of Postgraduate Studies',
+    ]).optional(),
 });
 
 const loginSchema = z.object({
@@ -26,7 +51,7 @@ const loginSchema = z.object({
     rememberMe: z.boolean().optional().default(false),
 });
 
-// Generators
+// Token Generators
 const generateAccessToken = (user) => {
     return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
         expiresIn: '15m',
@@ -35,7 +60,7 @@ const generateAccessToken = (user) => {
 
 const generateRefreshToken = (user, rememberMe = false) => {
     return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_REFRESH_SECRET, {
-        expiresIn: rememberMe ? '30d' : '1d', // 30 days vs 1 day
+        expiresIn: rememberMe ? '30d' : '1d',
     });
 };
 
@@ -44,7 +69,7 @@ const setAuthCookies = (res, accessToken, refreshToken, rememberMe = false) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 15 * 60 * 1000 // 15 minutes
+        maxAge: 15 * 60 * 1000
     });
 
     const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
@@ -61,7 +86,7 @@ const setAuthCookies = (res, accessToken, refreshToken, rememberMe = false) => {
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
     const validatedData = registerSchema.parse(req.body);
-    const { fullName, email, password, role, universityId } = validatedData;
+    const { fullName, email, password, role, universityId, school } = validatedData;
 
     const userExists = await User.findOne({ $or: [{ email }, { universityId }] });
     if (userExists) {
@@ -78,12 +103,12 @@ const registerUser = asyncHandler(async (req, res) => {
         passwordHash,
         role,
         universityId,
+        school: school || undefined,
         isVerified: true
     });
 
     await user.save();
 
-    // Bypass OTP Email functionality
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user, false);
     setAuthCookies(res, accessToken, refreshToken, false);
@@ -97,6 +122,7 @@ const registerUser = asyncHandler(async (req, res) => {
             email: user.email,
             role: user.role,
             universityId: user.universityId,
+            school: user.school,
             requiresVerification: false,
         },
     });
@@ -138,7 +164,6 @@ const verifyEmail = asyncHandler(async (req, res) => {
         return;
     }
 
-    // Verification successful
     user.isVerified = true;
     user.verificationOTP = undefined;
     user.verificationOTPExpire = undefined;
@@ -156,7 +181,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
             _id: user._id,
             email: user.email,
             role: user.role,
-            userRole: user.role // Alias for frontend usage compatibility
+            userRole: user.role
         }
     });
 });
@@ -186,10 +211,7 @@ const resendVerification = asyncHandler(async (req, res) => {
         email: user.email,
         subject: 'New Verification Code - VeriPoint',
         template: 'verification',
-        context: {
-            otp,
-            email: user.email,
-        },
+        context: { otp, email: user.email },
     });
 
     res.status(200).json({
@@ -205,7 +227,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    // Keep response generic to not reveal existing emails!
     if (!user) {
         return res.status(200).json({ success: true, message: 'If that email exists, a password reset link has been sent.' });
     }
@@ -253,11 +274,8 @@ const resetPassword = asyncHandler(async (req, res) => {
         return;
     }
 
-    // Encrypt new password
     const salt = await bcrypt.genSalt(10);
     user.passwordHash = await bcrypt.hash(password, salt);
-
-    // Clear reset token state
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
@@ -272,21 +290,15 @@ const resetPassword = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = asyncHandler(async (req, res) => {
-    console.log("LOGIN REQUEST RECEIVED:", req.body);
     const validatedData = loginSchema.parse(req.body);
     const { email, password, rememberMe } = validatedData;
 
     const user = await User.findOne({ email });
-    console.log("USER FOUND IN DB:", !!user);
 
     if (user) {
-        console.log("DB PASSWORD HASH:", user.passwordHash);
         const isMatch = await bcrypt.compare(password, user.passwordHash);
-        console.log("PASSWORD MATCH RESULT:", isMatch);
 
         if (isMatch) {
-
-            console.log("LOGIN SUCCESSFUL, issuing cookies");
             const accessToken = generateAccessToken(user);
             const refreshToken = generateRefreshToken(user, rememberMe);
             setAuthCookies(res, accessToken, refreshToken, rememberMe);
@@ -299,6 +311,7 @@ const loginUser = asyncHandler(async (req, res) => {
                     email: user.email,
                     role: user.role,
                     universityId: user.universityId,
+                    school: user.school,
                     message: "Login successful"
                 }
             });
@@ -337,10 +350,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     try {
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-        // Generate new access token
         const newAccessToken = generateAccessToken({ _id: decoded.id, role: decoded.role });
 
-        // Set new access token cookie
         res.cookie('accessToken', newAccessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -360,7 +371,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
-    // req.user is populated by protect middleware
     if (!req.user) {
         return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -372,7 +382,8 @@ const getMe = asyncHandler(async (req, res) => {
             fullName: req.user.fullName,
             email: req.user.email,
             role: req.user.role,
-            universityId: req.user.universityId
+            universityId: req.user.universityId,
+            school: req.user.school,
         }
     });
 });

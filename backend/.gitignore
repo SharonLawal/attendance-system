@@ -20,3 +20,4 @@ coverage
 .node_repl_history
 
 .env.local
+.env

@@ -22,7 +22,7 @@ export default function StudentProfile() {
     setTimeout(() => {
       setIsLoggingOut(false);
       setLogoutModalOpen(false);
-      window.location.href = '/auth/login';
+      window.location.href = '/login';
     }, 1500);
   };
 

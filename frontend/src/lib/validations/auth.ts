@@ -1,12 +1,31 @@
 import { z } from "zod";
 
+const BABCOCK_SCHOOLS = [
+  "School of Computing & Engineering Sciences",
+  "School of Education and Humanities",
+  "School of Law & Security Studies",
+  "School of Management Sciences",
+  "School of Public & Applied Health",
+  "Veronica Adeleke School of Social Sciences",
+  "School of Science and Technology",
+  "School of Nursing Sciences",
+  "Benjamin Carson School of Medicine",
+  "College of Postgraduate Studies",
+] as const;
+
 // --- Rules ---
 const babcockEmailRule = z
   .string()
   .email("Please enter a valid email address")
-  .refine((email) => email.endsWith("@babcock.edu.ng") || email.endsWith("@student.babcock.edu.ng"), {
-    message: "You must use a valid Babcock University email (@babcock.edu.ng)",
-  });
+  .refine(
+    (email) =>
+      email.endsWith("@babcock.edu.ng") ||
+      email.endsWith("@student.babcock.edu.ng"),
+    {
+      message:
+        "You must use a valid Babcock University email (@babcock.edu.ng)",
+    }
+  );
 
 const signupPasswordRule = z
   .string()
@@ -16,9 +35,7 @@ const signupPasswordRule = z
   .regex(/[0-9]/, "Password must contain at least one number")
   .regex(/[\W_]/, "Password must contain at least one special character");
 
-const loginPasswordRule = z
-  .string()
-  .min(1, "Password is required");
+const loginPasswordRule = z.string().min(1, "Password is required");
 
 // --- Login Schema ---
 export const loginSchema = z.object({
@@ -36,6 +53,7 @@ export const signupSchema = z
     role: z.enum(["Student", "Lecturer"], {
       message: "Please select a valid role",
     }),
+    school: z.string().optional(),
     password: signupPasswordRule,
     confirmPassword: signupPasswordRule,
     terms: z.literal(true, {
@@ -45,7 +63,19 @@ export const signupSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  });
+  })
+  .refine(
+    (data) => {
+      // School is required for Lecturers
+      if (data.role === "Lecturer" && !data.school) return false;
+      return true;
+    },
+    {
+      message: "Please select your school/faculty",
+      path: ["school"],
+    }
+  );
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;
+export { BABCOCK_SCHOOLS };
