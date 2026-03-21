@@ -14,26 +14,14 @@ const getOAuthClient = (tokens = null) => {
         process.env.GOOGLE_CLIENT_SECRET,
         process.env.GOOGLE_REDIRECT_URI
     );
-    if (tokens) {
-        client.setCredentials(tokens);
-        // Auto-save refreshed tokens back to DB
-        client.on('tokens', async (newTokens) => {
-            if (newTokens.refresh_token) {
-                // Only update if we get a new refresh token
-            }
-        });
-    }
+    if (tokens) client.setCredentials(tokens);
     return client;
 };
 
 // ─── Get Auth URL ────────────────────────────────────────────────────────────
 
-// @desc    Generate Google OAuth URL
-// @route   GET /api/lms/google/auth
-// @access  Private/Lecturer
 const getAuthUrl = asyncHandler(async (req, res) => {
     const oauth2Client = getOAuthClient();
-
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: [
@@ -42,36 +30,25 @@ const getAuthUrl = asyncHandler(async (req, res) => {
             'https://www.googleapis.com/auth/classroom.coursework.students.readonly',
             'https://www.googleapis.com/auth/userinfo.email',
         ],
-        state: req.user._id.toString(), // Pass lecturer ID so callback knows who to save tokens for
-        prompt: 'consent',              // Force consent screen so we always get refresh_token
+        state: req.user._id.toString(),
+        prompt: 'consent',
     });
-
     res.json({ url });
 });
 
 // ─── OAuth Callback ──────────────────────────────────────────────────────────
 
-// @desc    Handle Google OAuth callback (redirected from Google)
-// @route   GET /api/lms/google/callback
-// @access  Public
 const handleCallback = asyncHandler(async (req, res) => {
     const { code, state: userId, error } = req.query;
-
     if (error || !code || !userId) {
-        return res.redirect(
-            `${process.env.FRONTEND_URL}/lecturer/integrations?error=oauth_failed`
-        );
+        return res.redirect(`${process.env.FRONTEND_URL}/lecturer/integrations?error=oauth_failed`);
     }
-
     try {
         const oauth2Client = getOAuthClient();
         const { tokens } = await oauth2Client.getToken(code);
-
-        // Fetch the connected Google account email for display
         oauth2Client.setCredentials(tokens);
         const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
         const userInfo = await oauth2.userinfo.get();
-
         await User.findByIdAndUpdate(userId, {
             googleTokens: {
                 access_token: tokens.access_token,
@@ -80,23 +57,15 @@ const handleCallback = asyncHandler(async (req, res) => {
                 email: userInfo.data.email,
             },
         });
-
-        res.redirect(
-            `${process.env.FRONTEND_URL}/lecturer/integrations?connected=google`
-        );
+        res.redirect(`${process.env.FRONTEND_URL}/lecturer/integrations?connected=google`);
     } catch (err) {
         console.error('Google OAuth callback error:', err);
-        res.redirect(
-            `${process.env.FRONTEND_URL}/lecturer/integrations?error=token_exchange_failed`
-        );
+        res.redirect(`${process.env.FRONTEND_URL}/lecturer/integrations?error=token_exchange_failed`);
     }
 });
 
 // ─── Connection Status ───────────────────────────────────────────────────────
 
-// @desc    Check if Google is connected for the current user
-// @route   GET /api/lms/google/status
-// @access  Private/Lecturer
 const getConnectionStatus = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('googleTokens');
     res.json({
@@ -107,129 +76,69 @@ const getConnectionStatus = asyncHandler(async (req, res) => {
 
 // ─── Disconnect ──────────────────────────────────────────────────────────────
 
-// @desc    Disconnect Google account
-// @route   DELETE /api/lms/google/disconnect
-// @access  Private/Lecturer
 const disconnectGoogle = asyncHandler(async (req, res) => {
-    await User.findByIdAndUpdate(req.user._id, {
-        $unset: { googleTokens: 1 },
-    });
+    await User.findByIdAndUpdate(req.user._id, { $unset: { googleTokens: 1 } });
     res.json({ success: true, message: 'Google account disconnected' });
 });
 
-// ─── Get Google Classroom Courses ────────────────────────────────────────────
+// ─── List Google Classroom Courses ──────────────────────────────────────────
 
-// @desc    List all active Google Classroom courses the lecturer teaches
-// @route   GET /api/lms/google/courses
-// @access  Private/Lecturer
 const getGoogleCourses = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('googleTokens');
-
     if (!user.googleTokens?.access_token) {
-        res.status(400);
-        throw new Error('Google account not connected');
+        res.status(400); throw new Error('Google account not connected');
     }
-
     const oauth2Client = getOAuthClient(user.googleTokens);
     const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
-
-    const response = await classroom.courses.list({
-        teacherId: 'me',
-        courseStates: ['ACTIVE'],
-    });
-
+    const response = await classroom.courses.list({ teacherId: 'me', courseStates: ['ACTIVE'] });
     const courses = (response.data.courses || []).map((c) => ({
         id: c.id,
         name: c.name,
         section: c.section || '',
-        studentCount: c.courseState,
         enrollmentCode: c.enrollmentCode || '',
     }));
-
     res.json({ courses });
 });
 
-// ─── Get Coursework (for attendance pull) ────────────────────────────────────
+// ─── Helper: find VeriPoint users from a list of Google emails ───────────────
+// Checks linkedGoogleEmail first, then falls back to primary email
 
-// @desc    List coursework items for a Google Classroom course
-// @route   GET /api/lms/google/courses/:courseId/coursework
-// @access  Private/Lecturer
-const getCourseWork = asyncHandler(async (req, res) => {
-    const { courseId } = req.params;
-    const user = await User.findById(req.user._id).select('googleTokens');
-
-    if (!user.googleTokens?.access_token) {
-        res.status(400);
-        throw new Error('Google account not connected');
-    }
-
-    const oauth2Client = getOAuthClient(user.googleTokens);
-    const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
-
-    const response = await classroom.courses.courseWork.list({
-        courseId,
-        orderBy: 'updateTime desc',
-        pageSize: 20,
-    });
-
-    const courseWork = (response.data.courseWork || []).map((cw) => ({
-        id: cw.id,
-        title: cw.title,
-        type: cw.workType,
-        creationTime: cw.creationTime,
-    }));
-
-    res.json({ courseWork });
-});
+const findUsersByGoogleEmails = async (googleEmails) => {
+    const lower = googleEmails.map((e) => e.toLowerCase());
+    return User.find({
+        role: 'Student',
+        $or: [
+            { linkedGoogleEmail: { $in: lower } },
+            { email: { $in: lower } },
+        ],
+    }).select('_id email linkedGoogleEmail');
+};
 
 // ─── Sync Roster ─────────────────────────────────────────────────────────────
+// Imports all enrolled students from a Google Classroom course into a VeriPoint course
 
-// @desc    Import students from a Google Classroom course into a VeriPoint course
-// @route   POST /api/lms/google/sync-roster
-// @access  Private/Lecturer
 const syncRoster = asyncHandler(async (req, res) => {
     const { googleCourseId, veriPointCourseId } = req.body;
-
     if (!googleCourseId || !veriPointCourseId) {
-        res.status(400);
-        throw new Error('googleCourseId and veriPointCourseId are required');
+        res.status(400); throw new Error('googleCourseId and veriPointCourseId are required');
     }
 
-    // Verify course ownership
-    const course = await Course.findOne({
-        _id: veriPointCourseId,
-        lecturerId: req.user._id,
-    });
-    if (!course) {
-        res.status(404);
-        throw new Error('VeriPoint course not found or unauthorized');
-    }
+    const course = await Course.findOne({ _id: veriPointCourseId, lecturerId: req.user._id });
+    if (!course) { res.status(404); throw new Error('VeriPoint course not found or unauthorized'); }
 
     const user = await User.findById(req.user._id).select('googleTokens');
     if (!user.googleTokens?.access_token) {
-        res.status(400);
-        throw new Error('Google account not connected');
+        res.status(400); throw new Error('Google account not connected');
     }
 
     const oauth2Client = getOAuthClient(user.googleTokens);
     const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
 
-    // Pull all students from Google Classroom
-    const response = await classroom.courses.students.list({
-        courseId: googleCourseId,
-    });
-
+    const response = await classroom.courses.students.list({ courseId: googleCourseId });
     const students = response.data.students || [];
-    const googleEmails = students
-        .map((s) => s.profile?.emailAddress?.toLowerCase())
-        .filter(Boolean);
+    const googleEmails = students.map((s) => s.profile?.emailAddress?.toLowerCase()).filter(Boolean);
 
-    // Match by email against VeriPoint users
-    const matchedUsers = await User.find({
-        email: { $in: googleEmails },
-        role: 'Student',
-    }).select('_id email');
-
+    const matchedUsers = await findUsersByGoogleEmails(googleEmails);
     const matchedIds = matchedUsers.map((u) => u._id);
 
     if (matchedIds.length > 0) {
@@ -258,72 +167,95 @@ const syncRoster = asyncHandler(async (req, res) => {
     });
 });
 
-// ─── Sync Attendance (from coursework submissions) ───────────────────────────
+// ─── Sync Latest Attendance ───────────────────────────────────────────────────
+//
+// This is the ONE-CLICK sync the lecturer uses after an online class.
+//
+// Workflow:
+//   1. Lecturer runs an online class (Google Meet)
+//   2. During class, students submit the latest Google Classroom assignment
+//      (lecturer shares the link in the Meet chat — students just click Submit)
+//   3. After class, lecturer clicks "Sync Attendance" in VeriPoint
+//   4. This endpoint automatically finds the MOST RECENT assignment,
+//      pulls all submissions, matches students by linkedGoogleEmail,
+//      and marks them Present in VeriPoint
+//
+// No manual assignment selection needed.
 
-// @desc    Mark students as present based on who submitted a Google Classroom assignment
-// @route   POST /api/lms/google/sync-attendance
-// @access  Private/Lecturer
-const syncAttendance = asyncHandler(async (req, res) => {
-    const { googleCourseId, veriPointCourseId, courseWorkId } = req.body;
+const syncLatestAttendance = asyncHandler(async (req, res) => {
+    const { googleCourseId, veriPointCourseId } = req.body;
 
-    if (!googleCourseId || !veriPointCourseId || !courseWorkId) {
-        res.status(400);
-        throw new Error('googleCourseId, veriPointCourseId and courseWorkId are required');
+    if (!googleCourseId || !veriPointCourseId) {
+        res.status(400); throw new Error('googleCourseId and veriPointCourseId are required');
     }
 
-    const course = await Course.findOne({
-        _id: veriPointCourseId,
-        lecturerId: req.user._id,
-    });
-    if (!course) {
-        res.status(404);
-        throw new Error('VeriPoint course not found or unauthorized');
-    }
+    const course = await Course.findOne({ _id: veriPointCourseId, lecturerId: req.user._id });
+    if (!course) { res.status(404); throw new Error('VeriPoint course not found or unauthorized'); }
 
     const user = await User.findById(req.user._id).select('googleTokens');
     if (!user.googleTokens?.access_token) {
-        res.status(400);
-        throw new Error('Google account not connected');
+        res.status(400); throw new Error('Google account not connected');
     }
 
     const oauth2Client = getOAuthClient(user.googleTokens);
     const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
 
-    // Get all submissions that were turned in
+    // Step 1: Get the most recently created assignment for this course
+    const cwResponse = await classroom.courses.courseWork.list({
+        courseId: googleCourseId,
+        orderBy: 'updateTime desc',
+        pageSize: 1,   // We only want the latest
+    });
+
+    const courseWorkItems = cwResponse.data.courseWork || [];
+    if (courseWorkItems.length === 0) {
+        res.status(400);
+        throw new Error('No assignments found in this Google Classroom course. Create an attendance assignment first.');
+    }
+
+    const latestAssignment = courseWorkItems[0];
+
+    // Step 2: Get all submissions that were turned in for that assignment
     const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
         courseId: googleCourseId,
-        courseWorkId: courseWorkId,
+        courseWorkId: latestAssignment.id,
         states: ['TURNED_IN', 'RETURNED'],
     });
 
     const submissions = submissionsResponse.data.studentSubmissions || [];
 
-    // Get emails for each submitting student
+    if (submissions.length === 0) {
+        res.json({
+            success: true,
+            message: 'No submissions found for the latest assignment yet.',
+            syncedCount: 0,
+            totalSubmissions: 0,
+            assignmentTitle: latestAssignment.title,
+        });
+        return;
+    }
+
+    // Step 3: Fetch the Google email for each submitting student
     const submitterEmails = [];
     for (const submission of submissions) {
         try {
-            const profile = await classroom.userProfiles.get({
-                userId: submission.userId,
-            });
+            const profile = await classroom.userProfiles.get({ userId: submission.userId });
             if (profile.data.emailAddress) {
                 submitterEmails.push(profile.data.emailAddress.toLowerCase());
             }
         } catch {
-            // Profile fetch failed for this student — skip
+            // Skip profiles we can't fetch
         }
     }
 
-    // Match to VeriPoint users
-    const matchedUsers = await User.find({
-        email: { $in: submitterEmails },
-        role: 'Student',
-    }).select('_id');
+    // Step 4: Match to VeriPoint users via linkedGoogleEmail
+    const matchedUsers = await findUsersByGoogleEmails(submitterEmails);
 
-    // Create a background attendance session representing this LMS sync
+    // Step 5: Create a background LMS session to attach records to
     const session = await AttendanceSession.create({
         courseId: veriPointCourseId,
         lecturerId: req.user._id,
-        otcCode: 'GC0000',
+        otcCode: '000000',
         startTime: new Date(),
         endTime: new Date(),
         locationPolygon: {
@@ -332,7 +264,7 @@ const syncAttendance = asyncHandler(async (req, res) => {
         },
     });
 
-    // Bulk insert attendance records (ignore duplicates)
+    // Step 6: Bulk insert attendance records, ignore duplicates
     const records = matchedUsers.map((u) => ({
         sessionId: session._id,
         studentId: u._id,
@@ -342,9 +274,8 @@ const syncAttendance = asyncHandler(async (req, res) => {
 
     let inserted = 0;
     if (records.length > 0) {
-        const result = await AttendanceRecord.insertMany(records, {
-            ordered: false,
-        }).catch((err) => err.insertedDocs || []);
+        const result = await AttendanceRecord.insertMany(records, { ordered: false })
+            .catch((err) => err.insertedDocs || []);
         inserted = Array.isArray(result) ? result.length : records.length;
     }
 
@@ -358,9 +289,129 @@ const syncAttendance = asyncHandler(async (req, res) => {
 
     res.json({
         success: true,
-        message: `${inserted} students marked as Present from Google Classroom submissions`,
+        message: `${inserted} students marked Present from "${latestAssignment.title}"`,
         syncedCount: inserted,
         totalSubmissions: submissions.length,
+        unmatched: submissions.length - inserted,
+        assignmentTitle: latestAssignment.title,
+    });
+});
+
+// ─── Import Meet Attendance CSV ───────────────────────────────────────────────
+//
+// Accepts a CSV exported from the "Google Meet Attendance List" Chrome extension
+// (meetlist.io). The extension produces a CSV with at minimum these columns:
+//   Name, Email, First Seen At, Duration
+//
+// This endpoint:
+//   1. Parses the uploaded CSV buffer (no temp files written to disk)
+//   2. Extracts all email addresses from the file
+//   3. Matches them against VeriPoint users via linkedGoogleEmail or primary email
+//   4. Creates an AttendanceSession + AttendanceRecord entries (Present) for matches
+//   5. Returns a summary with matched / unmatched counts
+
+const importMeetCsv = asyncHandler(async (req, res) => {
+    const { veriPointCourseId } = req.body;
+
+    if (!veriPointCourseId) {
+        res.status(400); throw new Error('veriPointCourseId is required');
+    }
+    if (!req.file) {
+        res.status(400); throw new Error('No CSV file uploaded');
+    }
+
+    const course = await Course.findOne({ _id: veriPointCourseId, lecturerId: req.user._id });
+    if (!course) { res.status(404); throw new Error('VeriPoint course not found or unauthorized'); }
+
+    // ── Parse CSV in-memory ──────────────────────────────────────────────────
+    // Handles both \r\n and \n line endings. Skips blank lines.
+    const csvText = req.file.buffer.toString('utf8');
+    const lines = csvText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+    if (lines.length < 2) {
+        res.status(400); throw new Error('CSV file appears to be empty or has no data rows');
+    }
+
+    // Parse header row — find which column index holds the email
+    const parseRow = (line) => {
+        // Handle quoted fields (e.g. "Doe, Jane")
+        const cols = [];
+        let current = '';
+        let inQuotes = false;
+        for (const ch of line) {
+            if (ch === '"') { inQuotes = !inQuotes; }
+            else if (ch === ',' && !inQuotes) { cols.push(current.trim()); current = ''; }
+            else { current += ch; }
+        }
+        cols.push(current.trim());
+        return cols;
+    };
+
+    const headers = parseRow(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
+    const emailColIndex = headers.findIndex((h) => h.includes('email'));
+
+    if (emailColIndex === -1) {
+        res.status(400); throw new Error('CSV must contain an "Email" column. Ensure you are uploading a file exported from the Google Meet Attendance List extension.');
+    }
+
+    // Extract unique participant emails from data rows
+    const meetEmails = [];
+    for (let i = 1; i < lines.length; i++) {
+        const cols = parseRow(lines[i]);
+        const email = cols[emailColIndex]?.toLowerCase().trim();
+        if (email && email.includes('@') && !meetEmails.includes(email)) {
+            meetEmails.push(email);
+        }
+    }
+
+    if (meetEmails.length === 0) {
+        res.status(400); throw new Error('No valid email addresses found in the CSV file');
+    }
+
+    // ── Match emails to VeriPoint students ───────────────────────────────────
+    const matchedUsers = await findUsersByGoogleEmails(meetEmails);
+
+    // ── Create attendance session + records ──────────────────────────────────
+    const session = await AttendanceSession.create({
+        courseId: veriPointCourseId,
+        lecturerId: req.user._id,
+        otcCode: '000000',
+        startTime: new Date(),
+        endTime: new Date(),
+        locationPolygon: {
+            type: 'Polygon',
+            coordinates: [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]],
+        },
+    });
+
+    const records = matchedUsers.map((u) => ({
+        sessionId: session._id,
+        studentId: u._id,
+        status: 'Present',
+        source: 'LMS_Sync',
+    }));
+
+    let inserted = 0;
+    if (records.length > 0) {
+        const result = await AttendanceRecord.insertMany(records, { ordered: false })
+            .catch((err) => err.insertedDocs || []);
+        inserted = Array.isArray(result) ? result.length : records.length;
+    }
+
+    await SyncHistory.create({
+        lecturerId: req.user._id,
+        courseId: veriPointCourseId,
+        platform: 'Google Meet',
+        studentsSynced: inserted,
+        status: inserted > 0 ? 'Success' : 'Partial Success',
+    });
+
+    res.json({
+        success: true,
+        message: `${inserted} students marked Present from Meet attendance CSV`,
+        syncedCount: inserted,
+        totalInCsv: meetEmails.length,
+        unmatched: meetEmails.length - inserted,
     });
 });
 
@@ -370,7 +421,7 @@ module.exports = {
     getConnectionStatus,
     disconnectGoogle,
     getGoogleCourses,
-    getCourseWork,
     syncRoster,
-    syncAttendance,
+    syncLatestAttendance,
+    importMeetCsv,
 };

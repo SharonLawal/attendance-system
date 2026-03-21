@@ -67,16 +67,16 @@ export const rejectAttendance = async (recordId: string, reason?: string) => {
   return res.data;
 };
 
-// ─── Google Classroom ────────────────────────────────────────────────────────
+// ─── Google Classroom ─────────────────────────────────────────────────────────
 
 export const getGoogleConnectionStatus = async () => {
   const res = await apiClient.get('/api/lms/google/status');
-  return res.data; // { connected: boolean, email: string | null }
+  return res.data;
 };
 
 export const getGoogleAuthUrl = async () => {
   const res = await apiClient.get('/api/lms/google/auth');
-  return res.data; // { url: string }
+  return res.data;
 };
 
 export const disconnectGoogle = async () => {
@@ -86,15 +86,13 @@ export const disconnectGoogle = async () => {
 
 export const getGoogleCourses = async () => {
   const res = await apiClient.get('/api/lms/google/courses');
-  return res.data; // { courses: [...] }
+  return res.data;
 };
 
-export const getGoogleCourseWork = async (googleCourseId: string) => {
-  const res = await apiClient.get(`/api/lms/google/courses/${googleCourseId}/coursework`);
-  return res.data; // { courseWork: [...] }
-};
-
-export const syncGoogleRoster = async (googleCourseId: string, veriPointCourseId: string) => {
+export const syncGoogleRoster = async (
+  googleCourseId: string,
+  veriPointCourseId: string
+) => {
   const res = await apiClient.post('/api/lms/google/sync-roster', {
     googleCourseId,
     veriPointCourseId,
@@ -102,15 +100,35 @@ export const syncGoogleRoster = async (googleCourseId: string, veriPointCourseId
   return res.data;
 };
 
+// One-click sync — backend automatically picks the latest assignment
 export const syncGoogleAttendance = async (
   googleCourseId: string,
-  veriPointCourseId: string,
-  courseWorkId: string
+  veriPointCourseId: string
 ) => {
   const res = await apiClient.post('/api/lms/google/sync-attendance', {
     googleCourseId,
     veriPointCourseId,
-    courseWorkId,
+  });
+  return res.data;
+};
+
+// ─── CSV Import ──────────────────────────────────────────────────────────────
+//
+// Works with Google Meet and Microsoft Teams attendance export CSVs.
+// The backend auto-detects the platform from the CSV column headers.
+
+export const importCsvAttendance = async (
+  file: File,
+  veriPointCourseId: string,
+  platform: 'meet' | 'teams'
+) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('veriPointCourseId', veriPointCourseId);
+  formData.append('platform', platform);
+
+  const res = await apiClient.post('/api/lms/csv/sync-attendance', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
   return res.data;
 };
