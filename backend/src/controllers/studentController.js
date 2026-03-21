@@ -12,35 +12,40 @@ const Notification = require('../models/Notification');
 const getDashboard = asyncHandler(async (req, res) => {
     const studentId = req.user._id;
 
-    // 1. Calculate Stats
-    const records = await AttendanceRecord.find({ studentId }).populate('sessionId');
-    const courseIds = [...new Set(records.map(r => r.sessionId?.courseId?.toString()).filter(Boolean))];
+    // Get all records for this student
+    const records = await AttendanceRecord.find({ studentId })
+        .populate({ path: 'sessionId', populate: { path: 'courseId', select: 'courseCode courseName _id' } });
+
+    // Get unique course IDs this student has attendance records for
+    const courseIds = [...new Set(
+        records
+            .map(r => r.sessionId?.courseId?._id?.toString())
+            .filter(Boolean)
+    )];
 
     let totalSessions = 0;
     let presentCount = 0;
 
     if (courseIds.length > 0) {
-        totalSessions = await AttendanceSession.countDocuments({ courseId: { $in: courseIds } });
-        presentCount = await AttendanceRecord.countDocuments({ studentId, status: 'Present' });
+        totalSessions = await AttendanceSession.countDocuments({
+            courseId: { $in: courseIds }
+        });
+        presentCount = await AttendanceRecord.countDocuments({
+            studentId,
+            status: 'Present'
+        });
     }
 
     const attendancePercentage = totalSessions === 0 ? 100 : Math.round((presentCount / totalSessions) * 100);
 
-    const stats = {
-        attendance_percentage: attendancePercentage,
-        total_classes: totalSessions,
-        attended_classes: presentCount,
-        streak_days: 0 // Mock for now, would require complex date diffing of consecutive present records
-    };
-
-    // 2. Fetch Today's Schedule (Simplified: just grabs first 3 for UI mockup if day filter isn't active)
+    // Today's schedule
     const todaysSchedule = await ClassSchedule.find()
         .populate('courseId', 'courseCode courseName')
         .limit(3);
 
-    // 3. Fetch Recent History (Last 5)
+    // Recent history — FIXED: sort by checkedInAt not timestamp
     const recentHistory = await AttendanceRecord.find({ studentId })
-        .sort({ timestamp: -1 })
+        .sort({ checkedInAt: -1 })   // ← FIXED
         .limit(5)
         .populate({
             path: 'sessionId',
@@ -48,17 +53,45 @@ const getDashboard = asyncHandler(async (req, res) => {
         });
 
     res.json({
-        stats,
-        todays_schedule: todaysSchedule,
-        recent_history: recentHistory
+        stats: {
+            attendance_percentage: attendancePercentage,
+            total_classes: totalSessions,
+            attended_classes: presentCount,
+            streak_days: 0
+        },
+        todays_schedule: todaysSchedule.map(s => ({
+            courseCode: s.courseId?.courseCode,
+            courseName: s.courseId?.courseName,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            room: s.room,
+            type: s.type,
+        })),
+        recent_history: recentHistory.map(r => ({
+            id: r._id,
+            course: r.sessionId?.courseId?.courseCode || 'Unknown',
+            date: r.checkedInAt
+                ? new Date(r.checkedInAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Unknown',
+            time: r.checkedInAt
+                ? new Date(r.checkedInAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                : '',
+            status: r.status,
+            method: r.source,
+        }))
     });
 });
 
-// @desc    Get aggregate stats for standard student dashboard (LEGACY - can be deprecated)
+// @desc    Lightweight stats endpoint (kept for compatibility)
 // @route   GET /api/student/stats
 // @access  Private/Student
 const getDashboardStats = asyncHandler(async (req, res) => {
-    res.json({ attendancePercentage: 100 });
+    // Forward to the full dashboard so both endpoints return consistent data
+    const studentId = req.user._id;
+    const totalSessions = await AttendanceSession.countDocuments();
+    const presentCount = await AttendanceRecord.countDocuments({ studentId, status: 'Present' });
+    const attendancePercentage = totalSessions === 0 ? 100 : Math.round((presentCount / totalSessions) * 100);
+    res.json({ attendancePercentage });
 });
 
 // @desc    Get attendance history (Paginated)
@@ -72,7 +105,7 @@ const getHistory = asyncHandler(async (req, res) => {
 
     const [records, total] = await Promise.all([
         AttendanceRecord.find({ studentId })
-            .sort({ timestamp: -1 })
+            .sort({ checkedInAt: -1 })   // ← FIXED
             .skip(skip)
             .limit(limit)
             .populate({
@@ -83,7 +116,18 @@ const getHistory = asyncHandler(async (req, res) => {
     ]);
 
     res.json({
-        data: records,
+        data: records.map(r => ({
+            id: r._id,
+            course: r.sessionId?.courseId?.courseCode || 'Unknown',
+            date: r.checkedInAt
+                ? new Date(r.checkedInAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Unknown',
+            time: r.checkedInAt
+                ? new Date(r.checkedInAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                : '',
+            status: r.status,
+            method: r.source,
+        })),
         pagination: {
             current_page: page,
             total_pages: Math.ceil(total / limit),
@@ -101,7 +145,6 @@ const getHistory = asyncHandler(async (req, res) => {
 const getCourses = asyncHandler(async (req, res) => {
     const studentId = req.user._id;
 
-    // Aggregate student attendance per course
     const courseStats = await AttendanceRecord.aggregate([
         { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
         {
@@ -129,7 +172,6 @@ const getCourses = asyncHandler(async (req, res) => {
     const result = await Promise.all(courses.map(async (course) => {
         const stat = courseStats.find(c => c._id.equals(course._id));
         const totalClasses = await AttendanceSession.countDocuments({ courseId: course._id });
-
         const attendedClasses = stat ? stat.attendedClasses : 0;
         const percentage = totalClasses === 0 ? 100 : Math.round((attendedClasses / totalClasses) * 100);
 
@@ -141,7 +183,7 @@ const getCourses = asyncHandler(async (req, res) => {
             id: course._id,
             code: course.courseCode,
             title: course.courseName,
-            instructor: course.lecturerId ? course.lecturerId.fullName : 'Unknown',
+            instructor: course.lecturerId?.fullName || 'Unknown',
             attendancePercentage: percentage,
             totalClasses,
             attendedClasses,
@@ -156,8 +198,6 @@ const getCourses = asyncHandler(async (req, res) => {
 // @route   GET /api/student/schedule
 // @access  Private/Student
 const getSchedule = asyncHandler(async (req, res) => {
-    // In a real system, you'd filter ClassSchedule by courses the student is enrolled in.
-    // For now, we return all as mock.
     const schedules = await ClassSchedule.find().populate('courseId', 'courseCode courseName');
 
     const formattedSchedule = schedules.map(s => ({
@@ -179,7 +219,6 @@ const getActiveSession = asyncHandler(async (req, res) => {
     const studentId = req.user._id;
     const now = new Date();
 
-    // Find any session that is currently active (endTime > now)
     const activeSession = await AttendanceSession.findOne({
         endTime: { $gt: now }
     }).populate('courseId', 'courseCode courseName');
@@ -188,7 +227,6 @@ const getActiveSession = asyncHandler(async (req, res) => {
         return res.json({ active: false });
     }
 
-    // Optionally check if student already marked presence
     const existingRecord = await AttendanceRecord.findOne({
         sessionId: activeSession._id,
         studentId
@@ -207,7 +245,7 @@ const getActiveSession = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Get user notifications/warnings
+// @desc    Get user notifications
 // @route   GET /api/student/notifications
 // @access  Private/Student
 const getNotifications = asyncHandler(async (req, res) => {

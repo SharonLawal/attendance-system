@@ -6,8 +6,6 @@ const AttendanceSession = require('../models/AttendanceSession');
 const SyncHistory = require('../models/SyncHistory');
 
 // ─── CSV Parser ──────────────────────────────────────────────────────────────
-// Handles both Google Meet and Microsoft Teams export formats without
-// any external library dependency.
 
 const parseCSV = (text) => {
     const lines = text
@@ -17,25 +15,18 @@ const parseCSV = (text) => {
 
     if (lines.length < 2) return [];
 
-    // Detect delimiter — Teams uses tab, Meet uses comma
     const header = lines[0];
     const delimiter = header.includes('\t') ? '\t' : ',';
-
     const headers = header.split(delimiter).map((h) => h.replace(/"/g, '').trim().toLowerCase());
 
     return lines.slice(1).map((line) => {
         const values = line.split(delimiter).map((v) => v.replace(/"/g, '').trim());
         const row = {};
-        headers.forEach((h, i) => {
-            row[h] = values[i] || '';
-        });
+        headers.forEach((h, i) => { row[h] = values[i] || ''; });
         return row;
     });
 };
 
-// Extract email from a parsed CSV row.
-// Google Meet export columns:  "name", "email address"
-// Teams export columns:        "full name", "email", "join time", "leave time"
 const extractEmail = (row) => {
     return (
         row['email address'] ||
@@ -47,17 +38,10 @@ const extractEmail = (row) => {
     ).toLowerCase().trim();
 };
 
-const extractName = (row) => {
-    return (
-        row['name'] ||
-        row['full name'] ||
-        row['participant'] ||
-        row['display name'] ||
-        ''
-    ).trim();
+const detectPlatformName = (requestedPlatform) => {
+    if (requestedPlatform === 'teams') return 'Microsoft Teams';
+    return 'Google Meet'; // ← FIXED: was returning 'Google Classroom' for meet
 };
-
-// ─── Upload CSV Handler ──────────────────────────────────────────────────────
 
 // @desc    Parse a Google Meet or Teams attendance CSV and mark students Present
 // @route   POST /api/lms/csv/sync-attendance
@@ -75,7 +59,6 @@ const syncFromCSV = asyncHandler(async (req, res) => {
         throw new Error('No CSV file uploaded');
     }
 
-    // Verify course ownership
     const course = await Course.findOne({
         _id: veriPointCourseId,
         lecturerId: req.user._id,
@@ -85,26 +68,23 @@ const syncFromCSV = asyncHandler(async (req, res) => {
         throw new Error('Course not found or unauthorized');
     }
 
-    // Parse the uploaded CSV
     const csvText = req.file.buffer.toString('utf-8');
     const rows = parseCSV(csvText);
 
     if (rows.length === 0) {
         res.status(400);
-        throw new Error('CSV file is empty or could not be parsed. Make sure it is a valid Google Meet or Teams attendance export.');
+        throw new Error('CSV file is empty or could not be parsed.');
     }
 
-    // Extract emails from CSV rows
     const csvEmails = rows
         .map((row) => extractEmail(row))
         .filter((email) => email.includes('@'));
 
     if (csvEmails.length === 0) {
         res.status(400);
-        throw new Error('No email addresses found in the CSV. Make sure you are uploading the correct attendance export file.');
+        throw new Error('No email addresses found in the CSV.');
     }
 
-    // Match against VeriPoint users via linkedGoogleEmail or primary email
     const matchedUsers = await User.find({
         role: 'Student',
         $or: [
@@ -113,7 +93,6 @@ const syncFromCSV = asyncHandler(async (req, res) => {
         ],
     }).select('_id email linkedGoogleEmail');
 
-    // Create a background LMS session to attach attendance records to
     const session = await AttendanceSession.create({
         courseId: veriPointCourseId,
         lecturerId: req.user._id,
@@ -126,7 +105,6 @@ const syncFromCSV = asyncHandler(async (req, res) => {
         },
     });
 
-    // Bulk insert, skip duplicates
     const records = matchedUsers.map((u) => ({
         sessionId: session._id,
         studentId: u._id,
@@ -141,7 +119,7 @@ const syncFromCSV = asyncHandler(async (req, res) => {
         inserted = Array.isArray(result) ? result.length : records.length;
     }
 
-    const platformName = platform === 'teams' ? 'Microsoft Teams' : 'Google Classroom';
+    const platformName = detectPlatformName(platform);
 
     await SyncHistory.create({
         lecturerId: req.user._id,
@@ -151,19 +129,19 @@ const syncFromCSV = asyncHandler(async (req, res) => {
         status: inserted > 0 ? 'Success' : 'Partial Success',
     });
 
+    const unmatchedEmails = csvEmails.filter(
+        (email) => !matchedUsers.some(
+            (u) => u.linkedGoogleEmail === email || u.email === email
+        )
+    );
+
     res.json({
         success: true,
         message: `${inserted} students marked Present from ${platformName} attendance CSV`,
         syncedCount: inserted,
         totalInCSV: csvEmails.length,
         unmatched: csvEmails.length - matchedUsers.length,
-        // Return unmatched emails so the lecturer can see who wasn't found
-        unmatchedEmails: csvEmails.filter(
-            (email) =>
-                !matchedUsers.some(
-                    (u) => u.linkedGoogleEmail === email || u.email === email
-                )
-        ),
+        unmatchedEmails,
     });
 });
 

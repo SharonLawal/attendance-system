@@ -1,44 +1,50 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const User = require('../src/models/User');
-require('dotenv').config();
 
 async function seedAdmin() {
     try {
-        console.log(`Connecting to database at ${process.env.MONGO_URI}`);
-        await mongoose.connect(process.env.MONGO_URI);
+        const uri = process.env.MONGO_URI;
+        if (!uri) {
+            console.error('❌ MONGO_URI not found. Make sure .env.local or .env exists in the backend folder.');
+            process.exit(1);
+        }
+
+        console.log('Connecting to database...');
+        await mongoose.connect(uri);
+        console.log('✅ Connected');
 
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@babcock.edu.ng';
         const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
 
-        // Check if admin already exists
         const existingAdmin = await User.findOne({ email: adminEmail });
-
         if (existingAdmin) {
-            console.log('❌ Admin user already exists');
+            console.log('⚠️  Admin account already exists');
+            console.log('   Email:', adminEmail);
             process.exit(0);
         }
 
-        // Create admin user
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(adminPassword, salt);
+        const passwordHash = await bcrypt.hash(adminPassword, 10);
 
-        const admin = await User.create({
+        await User.create({
             fullName: 'System Administrator',
             email: adminEmail,
-            passwordHash: passwordHash,
+            passwordHash,
             role: 'Admin',
             universityId: 'ADMIN-001',
+            isVerified: true,
         });
 
-        console.log('✅ Admin user created successfully');
-        console.log('Email:', adminEmail);
-        console.log('Password:', adminPassword);
-        console.log('⚠️  Please change the password after first login');
-
+        console.log('✅ Admin account created successfully');
+        console.log('   Email:', adminEmail);
+        console.log('   Password:', adminPassword);
+        console.log('\n⚠️  Change this password after first login!');
         process.exit(0);
     } catch (error) {
-        console.error('Error seeding admin:', error);
+        console.error('❌ Error:', error.message);
         process.exit(1);
     }
 }

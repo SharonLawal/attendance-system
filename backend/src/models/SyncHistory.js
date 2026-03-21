@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const syncHistorySchema = new mongoose.Schema({
     platform: {
         type: String,
-        enum: ['Google Classroom', 'Microsoft Teams'],
+        enum: ['Google Classroom', 'Google Meet', 'Microsoft Teams', 'CSV Import'],
         required: true,
     },
     courseId: {
