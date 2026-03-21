@@ -14,19 +14,17 @@ const { authorizeRole } = require('../middleware/roleMiddleware');
 
 const router = express.Router();
 
-// Public — Google redirects here after user approves OAuth
+// Public — Google redirects here after OAuth approval
 router.get('/callback', handleCallback);
 
-// All routes below require a logged-in Lecturer
+// All routes below are Lecturer-only
 router.use(protect, authorizeRole('Lecturer'));
 
 router.get('/auth', getAuthUrl);
 router.get('/status', getConnectionStatus);
 router.delete('/disconnect', disconnectGoogle);
-
 router.get('/courses', getGoogleCourses);
 router.get('/courses/:courseId/coursework', getCourseWork);
-
 router.post('/sync-roster', syncRoster);
 router.post('/sync-attendance', syncAttendance);
 

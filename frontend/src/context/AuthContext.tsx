@@ -9,6 +9,7 @@ interface User {
     fullName: string;
     role: 'Student' | 'Lecturer' | 'Admin';
     universityId: string;
+    linkedGoogleEmail: string | null;
 }
 
 interface AuthContextType {
@@ -27,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch current user on mount
     const fetchUser = async () => {
         try {
             const response = await apiClient.get('/api/auth/me');
@@ -66,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         try {
             const response = await apiClient.post('/api/auth/register', data);
-            // Backend sets cookies and returns user data on successful registration
             if (response.data && response.data.data) {
                 setUser(response.data.data);
             }
@@ -80,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         await apiClient.post('/api/auth/logout');
+        setUser(null);
         if (typeof window !== 'undefined') {
             window.location.href = '/login';
         }
