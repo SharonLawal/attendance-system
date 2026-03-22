@@ -15,9 +15,16 @@ const classroomSchema = new mongoose.Schema({
         type: String, 
         required: true 
     },
-    coordinates: {
-        latitude: { type: Number, required: true },
-        longitude: { type: Number, required: true }
+    locationPolygon: {
+        type: {
+            type: String,
+            enum: ['Polygon'],
+            required: true,
+        },
+        coordinates: {
+            type: [[[Number]]], // Array of arrays of arrays of numbers [lng, lat]
+            required: true,
+        }
     },
     isActive: { 
         type: Boolean, 

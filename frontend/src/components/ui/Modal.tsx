@@ -53,7 +53,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
 
       <div
         className={cn(
-          "relative bg-white rounded-lg shadow-xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200",
+          "relative bg-white rounded-lg shadow-xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90dvh]",
           maxWidthClasses[maxWidth]
         )}
       >
@@ -73,7 +73,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, m
           </div>
         )}
 
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6">
           {children}
         </div>
 

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
 const Course = require('../models/Course');
 const AttendanceSession = require('../models/AttendanceSession');
@@ -34,49 +35,68 @@ const syncAttendance = asyncHandler(async (req, res) => {
         throw new Error('This course is not linked to any LMS');
     }
 
-    // Create a silent background session to link these records to
-    const session = await AttendanceSession.create({
-        courseId,
-        lecturerId,
-        otcCode: 'LMS0', // specific to LMS sync to bypass OTC requirement
-        startTime: new Date(),
-        endTime: new Date(),
-        locationPolygon: {
-            type: 'Polygon',
-            // Provide a dummy global polygon or null (if schema allowed),
-            // Here we provide a tiny valid dummy coordinate array for schema compliance
-            coordinates: [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]]
+    // Wrap in Mongoose Transaction
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
+
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let createdSession = await AttendanceSession.findOne({
+            courseId,
+            lecturerId,
+            isOnline: true,
+            createdAt: { $gte: today }
+        }).session(dbSession);
+
+        if (!createdSession) {
+            const sessionMatches = await AttendanceSession.create([{
+                courseId,
+                lecturerId,
+                otcCode: 'LMS0', // specific to LMS sync to bypass OTC requirement
+                startTime: new Date(),
+                endTime: new Date(),
+                isOnline: true
+            }], { session: dbSession });
+            createdSession = sessionMatches[0];
         }
-    });
 
-    // Prepare records to insert
-    const records = attendedStudentIds.map(studentId => ({
-        sessionId: session._id,
-        studentId,
-        status: 'Present',
-        source: 'LMS_Sync',
-    }));
+        // Prepare records to insert
+        const records = attendedStudentIds.map(studentId => ({
+            sessionId: createdSession._id,
+            studentId,
+            status: 'Present',
+            source: 'LMS_Sync',
+        }));
 
-    // Perform bulk insertion safely handling duplicates
-    const result = await AttendanceRecord.insertMany(records, { ordered: false }).catch((err) => {
-        // Return partial successes ignoring duplicates if any
-        return err.insertedDocs;
-    });
+        // Perform bulk insertion safely handling duplicates within the transaction
+        const result = await AttendanceRecord.insertMany(records, { ordered: false, session: dbSession }).catch((err) => {
+            // Return partial successes ignoring duplicates if any
+            return err.insertedDocs;
+        });
 
-    const syncedCount = result ? result.length : 0;
+        const syncedCount = result ? result.length : 0;
 
-    await SyncHistory.create({
-        lecturerId,
-        courseId,
-        platform: 'External LMS', // Usually comes from integration metadata
-        studentsSynced: syncedCount,
-        status: 'Success'
-    });
+        await SyncHistory.create([{
+            lecturerId,
+            courseId,
+            platform: 'External LMS', // Usually comes from integration metadata
+            studentsSynced: syncedCount,
+            status: 'Success'
+        }], { session: dbSession });
 
-    res.status(200).json({
-        message: 'LMS Attendance synchronized successfully',
-        syncedCount,
-    });
+        await dbSession.commitTransaction();
+        dbSession.endSession();
+
+        res.status(200).json({
+            message: 'LMS Attendance synchronized successfully',
+            syncedCount,
+        });
+    } catch (error) {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw error;
+    }
 });
 
 module.exports = { syncAttendance };

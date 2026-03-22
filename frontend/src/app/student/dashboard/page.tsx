@@ -14,7 +14,9 @@ import { VerificationProgress, VerificationState } from "@/components/ui/Verific
 import { DataTable } from "@/components/ui/DataTable";
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { getActiveSession, markAttendance as markAttendanceService } from '@/services/studentService';
+import { getGeolocationErrorMessage } from "@/lib/geo";
 import { Loader2, RefreshCcw } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function StudentDashboard() {
   const { data, isLoading, error, refetch } = useStudentDashboard();
@@ -111,10 +113,11 @@ export default function StudentDashboard() {
         }
       }, 1000);
 
-    } catch (error) {
+    } catch (error: any) {
+      const errMsg = getGeolocationErrorMessage(error);
       setVerificationState("error");
-      setErrorMessage("Location permission denied. Please enable GPS access in your browser settings to mark attendance.");
-      toast.error("Location permission denied");
+      setErrorMessage(errMsg);
+      toast.error(errMsg);
     }
   };
 
@@ -145,9 +148,15 @@ export default function StudentDashboard() {
   if (isLoading) {
     return (
       <DashboardLayout role="student">
-        <div className="w-full h-96 flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-babcock-blue mb-4" />
-          <p className="text-slate-500 font-medium">Loading your dashboard...</p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Skeleton className="lg:col-span-2 h-[400px] w-full" />
+            <div className="lg:col-span-1 space-y-6">
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-48 w-full" />
+            </div>
+          </div>
+          <Skeleton className="h-64 w-full" />
         </div>
       </DashboardLayout>
     );

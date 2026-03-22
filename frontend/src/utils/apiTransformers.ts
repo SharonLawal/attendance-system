@@ -1,13 +1,24 @@
-export function transformStudentStats(apiData: any) {
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+export function transformStudentStats(apiData: any): ApiResponse {
+  const payload = apiData.data || apiData;
   return {
-    stats: {
-      attendancePercentage: apiData.stats?.attendance_percentage || 0,
-      totalClasses: apiData.stats?.total_classes || 0,
-      attendedClasses: apiData.stats?.attended_classes || 0,
-      streakDays: apiData.stats?.streak_days || 0
-    },
-    todaysSchedule: apiData.todays_schedule ? apiData.todays_schedule.map(transformScheduleItem) : [],
-    recentHistory: apiData.recent_history ? apiData.recent_history.map(transformHistoryItem) : []
+    success: apiData.success ?? true,
+    message: apiData.message || (apiData.success === false ? "Request failed" : "Success"),
+    data: {
+      stats: {
+        attendancePercentage: payload.stats?.attendance_percentage || 0,
+        totalClasses: payload.stats?.total_classes || 0,
+        attendedClasses: payload.stats?.attended_classes || 0,
+        streakDays: payload.stats?.streak_days || 0
+      },
+      todaysSchedule: payload.todays_schedule ? payload.todays_schedule.map(transformScheduleItem) : [],
+      recentHistory: payload.recent_history ? payload.recent_history.map(transformHistoryItem) : []
+    }
   };
 }
 
@@ -33,71 +44,96 @@ export function transformHistoryItem(item: any) {
   };
 }
 
-export function transformPaginatedResponse(apiData: any, itemTransformer: (item: any) => any) {
+export function transformPaginatedResponse(apiData: any, itemTransformer: (item: any) => any): ApiResponse {
+  const payload = apiData.data || apiData;
   return {
-    data: apiData.data?.map(itemTransformer) || [],
-    pagination: {
-      currentPage: apiData.pagination?.current_page || 1,
-      totalPages: apiData.pagination?.total_pages || 1,
-      totalItems: apiData.pagination?.total_items || 0,
-      itemsPerPage: apiData.pagination?.items_per_page || 10,
-      hasNextPage: apiData.pagination?.has_next_page || false,
-      hasPrevPage: apiData.pagination?.has_prev_page || false,
-    },
+    success: apiData.success ?? true,
+    message: apiData.message || (apiData.success === false ? "Request failed" : "Success"),
+    data: {
+      data: payload.data?.map(itemTransformer) || [],
+      pagination: {
+        currentPage: payload.pagination?.current_page || 1,
+        totalPages: payload.pagination?.total_pages || 1,
+        totalItems: payload.pagination?.total_items || 0,
+        itemsPerPage: payload.pagination?.items_per_page || 10,
+        hasNextPage: payload.pagination?.has_next_page || false,
+        hasPrevPage: payload.pagination?.has_prev_page || false,
+      }
+    }
   };
 }
 
-export function transformLecturerDashboard(apiData: any) {
+export function transformLecturerDashboard(apiData: any): ApiResponse {
+  const payload = apiData.data || apiData;
   return {
-    stats: {
-      totalCourses: apiData.total_courses || 0,
-      activeSessions: apiData.active_sessions || 0,
-      totalStudents: apiData.total_students || 0,
-      averageAttendance: apiData.average_attendance || 0,
-    },
-    activeSession: apiData.active_session ? {
-      id: apiData.active_session.id,
-      courseCode: apiData.active_session.course_code,
-      courseName: apiData.active_session.course_name,
-      otcCode: apiData.active_session.otc_code,
-      startTime: apiData.active_session.start_time,
-      endTime: apiData.active_session.end_time,
-    } : null,
-    upcomingSessions: apiData.upcoming_sessions || []
+    success: apiData.success ?? true,
+    message: apiData.message || (apiData.success === false ? "Request failed" : "Success"),
+    data: {
+      stats: {
+        totalCourses: payload.total_courses || 0,
+        activeSessions: payload.active_sessions || 0,
+        totalStudents: payload.total_students || 0,
+        averageAttendance: payload.average_attendance || 0,
+      },
+      activeSession: payload.active_session ? {
+        id: payload.active_session.id,
+        courseCode: payload.active_session.course_code,
+        courseName: payload.active_session.course_name,
+        otcCode: payload.active_session.otc_code,
+        startTime: payload.active_session.start_time,
+        endTime: payload.active_session.end_time,
+      } : null,
+      upcomingSessions: payload.upcoming_sessions || []
+    }
   };
 }
 
-export function transformLiveSessionStats(apiData: any) {
+export function transformLiveSessionStats(apiData: any): ApiResponse {
+  const payload = apiData.data || apiData;
   return {
-    sessionId: apiData.session_id,
-    courseCode: apiData.course_code,
-    courseName: apiData.course_name,
-    otcCode: apiData.otc_code,
-    checkedInCount: apiData.checked_in_count || 0,
-    expectedCount: apiData.expected_count || 0,
-    attendanceRate: apiData.attendance_rate || 0,
-    timeRemaining: apiData.time_remaining || 0, // in seconds
-    startTime: apiData.start_time,
-    endTime: apiData.end_time,
+    success: apiData.success ?? true,
+    message: apiData.message || (apiData.success === false ? "Request failed" : "Success"),
+    data: {
+      sessionId: payload.session_id,
+      courseCode: payload.course_code,
+      courseName: payload.course_name,
+      otcCode: payload.otc_code,
+      checkedInCount: payload.checked_in_count || 0,
+      expectedCount: payload.expected_count || 0,
+      attendanceRate: payload.attendance_rate || 0,
+      timeRemaining: payload.time_remaining || 0, // in seconds
+      startTime: payload.start_time,
+      endTime: payload.end_time,
+    }
   };
 }
 
-export function transformAdminStats(apiData: any) {
+export function transformAdminStats(apiData: any): ApiResponse {
+  const payload = apiData.data || apiData;
   return {
-    totalStudents: apiData.totalStudents || "0",
-    activeSessions: apiData.activeSessions || "0",
-    systemHealth: apiData.systemHealth || "0%",
-    flaggedAbsences: apiData.flaggedAbsences || "0",
+    success: apiData.success ?? true,
+    message: apiData.message || (apiData.success === false ? "Request failed" : "Success"),
+    data: {
+      totalStudents: payload.totalStudents || "0",
+      activeSessions: payload.activeSessions || "0",
+      systemHealth: payload.systemHealth || "0%",
+      flaggedAbsences: payload.flaggedAbsences || "0",
+    }
   };
 }
 
-export function transformAdminUsers(apiData: any) {
+export function transformAdminUsers(apiData: any): ApiResponse {
+  const payload = apiData.data || apiData;
   return {
-    users: apiData.users || [],
-    pagination: {
-      currentPage: apiData.page || 1,
-      totalPages: apiData.pages || 1,
-      totalItems: apiData.total || 0,
+    success: apiData.success ?? true,
+    message: apiData.message || (apiData.success === false ? "Request failed" : "Success"),
+    data: {
+      users: payload.users || [],
+      pagination: {
+        currentPage: payload.page || 1,
+        totalPages: payload.pages || 1,
+        totalItems: payload.total || 0,
+      }
     }
   };
 }

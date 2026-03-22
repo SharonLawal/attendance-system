@@ -7,7 +7,9 @@ export function useStudentDashboard() {
     queryKey: ['student', 'dashboard'],
     queryFn: async () => {
       const response = await studentService.getDashboard();
-      return transformStudentStats(response);
+      const result = transformStudentStats(response);
+      if (!result.success) throw new Error(result.message);
+      return result.data;
     },
     staleTime: 2 * 60 * 1000,
   });

@@ -25,16 +25,20 @@ const attendanceSessionSchema = new mongoose.Schema({
         type: Date,
         required: true,
     },
+    isOnline: {
+        type: Boolean,
+        default: false,
+    },
     // GeoJSON Polygon for classroom boundaries
     locationPolygon: {
         type: {
             type: String,
             enum: ['Polygon'],
-            required: true,
+            required: function() { return !this.isOnline; },
         },
         coordinates: {
             type: [[[Number]]], // Array of arrays of arrays of numbers [lng, lat]
-            required: true,
+            required: function() { return !this.isOnline; },
         }
     },
 }, { timestamps: true });

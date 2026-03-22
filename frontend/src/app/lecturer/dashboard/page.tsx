@@ -11,7 +11,8 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { toast } from "sonner";
 import * as lecturerService from "@/services/lecturerService";
-import { generateGeoJSONCircle } from "@/lib/geo";
+import { generateGeoJSONCircle, getGeolocationErrorMessage } from "@/lib/geo";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { LiveAttendeesTable } from "@/components/lecturer/LiveAttendeesTable";
 import { useLecturerCourses, useLecturerDashboard, useLiveSessionAttendees, useClassrooms } from "@/hooks/useLecturerData";
 import { CreateCourseModal } from "@/components/lecturer/CreateCourseModal";
@@ -121,7 +122,9 @@ export default function LecturerDashboard() {
       refetchDashboard();
       toast.success("Attendance Session Started successfully!");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to start session. Ensure you have location permissions enabled.");
+      const isGeoError = error && typeof error.code === 'number';
+      const msg = isGeoError ? getGeolocationErrorMessage(error) : (error.response?.data?.message || "Failed to start session.");
+      toast.error(msg);
     }
   };
 
@@ -175,51 +178,22 @@ export default function LecturerDashboard() {
         )}
       </div>
 
-      {/* Aggregate Stats Row */}
+      {/* Primary Action Sequence (Replaces aggregate stats per MVP) */}
       {!sessionActive && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5 text-blue-600" />
+        <div className="mb-8">
+          <Card className="border-emerald-500/30 ring-1 ring-emerald-500/20 shadow-xl shadow-emerald-500/5 bg-gradient-to-br from-emerald-50 to-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+              <Play className="w-64 h-64 text-emerald-600" />
+            </div>
+            <CardContent className="p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+              <div className="flex-1 text-center md:text-left">
+                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Start Attendance Session</h2>
+                <p className="text-slate-500 max-w-xl text-lg">Broadcast a One-Time Code and activate the GPS boundary constraint for your students to mark physical presence.</p>
               </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500">Total Courses</p>
-                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.totalCourses || 0}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                <Play className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500">Active Sessions</p>
-                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.activeSessions || 0}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500">Total Students</p>
-                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.totalStudents || 0}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm ring-1 ring-slate-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500">Avg. Attendance</p>
-                <p className="text-xl font-bold text-slate-900">{dashboardData?.stats?.averageAttendance || 0}%</p>
-              </div>
+              <Button onClick={() => setIsSessionModalOpen(true)} className="w-full md:w-auto text-lg px-8 py-6 gap-3 bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 rounded-xl">
+                <Play className="w-6 h-6 fill-current" />
+                Initialize Session
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -228,10 +202,14 @@ export default function LecturerDashboard() {
       {!sessionActive ? (
         <div className="w-full">
           {isLoadingCourses ? (
-            <div className="w-full py-20 flex flex-col items-center justify-center">
-              <div className="w-8 h-8 rounded-full border-4 border-babcock-blue/30 border-t-babcock-blue animate-spin mb-4" />
-              <p className="text-slate-500 font-medium">Loading your courses...</p>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+              </div>
           ) : courses.length === 0 ? (
             <EmptyState
               title="No Courses Found"
@@ -246,7 +224,7 @@ export default function LecturerDashboard() {
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {courses.map((course) => (
+              {courses.map((course: any) => (
                 <Card key={course._id} className="border-slate-200 hover:border-babcock-blue/50 hover:shadow-md transition-all group">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
@@ -287,7 +265,7 @@ export default function LecturerDashboard() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                       <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                         <p className="text-xs text-slate-500 font-medium mb-1">Total Capacity</p>
                         <p className="font-semibold text-slate-900">{course.capacity || 50}</p>
@@ -324,7 +302,7 @@ export default function LecturerDashboard() {
 
             <CardHeader className="text-center pb-2 relative z-10 pt-10">
               <Badge variant="warning" className="absolute top-2 left-1/2 -translate-x-1/2 scale-90 tracking-widest uppercase animate-pulse border-babcock-gold/30">Live Session</Badge>
-              <CardTitle className="text-2xl font-display font-bold tracking-tight text-slate-900">{courses.find(c => c._id === selectedCourse)?.courseCode || "Unknown Course"}</CardTitle>
+              <CardTitle className="text-2xl font-display font-bold tracking-tight text-slate-900">{courses.find((c: any) => c._id === selectedCourse)?.courseCode || "Unknown Course"}</CardTitle>
               <CardDescription className="font-medium text-slate-500">Accepting check-ins now</CardDescription>
             </CardHeader>
 
@@ -451,7 +429,7 @@ export default function LecturerDashboard() {
               value={selectedCourse}
               onChange={setSelectedCourse}
               placeholder="Select course to take attendance for..."
-              options={courses.map(c => ({ label: `${c.courseCode} - ${c.courseName}`, value: c._id }))}
+              options={courses.map((c: any) => ({ label: `${c.courseCode} - ${c.courseName}`, value: c._id }))}
             />
           </div>
 

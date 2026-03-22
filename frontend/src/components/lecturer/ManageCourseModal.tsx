@@ -108,7 +108,7 @@ export function ManageCourseModal({ isOpen, onClose, course, onSuccess }: Manage
             onClose={onClose}
             title={`Manage Roster: ${course.courseCode}`}
             description="Import verified student lists or resolve pending check-ins from unregistered attendees."
-            maxWidth="2xl"
+            maxWidth="xl"
             footer={
                 <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto">
                     Close Window

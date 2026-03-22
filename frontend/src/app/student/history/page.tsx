@@ -24,7 +24,7 @@ export default function StudentHistory() {
   // Build unique course list from fetched data
   const courseOptions = useMemo(() => {
     if (!data?.data) return [{ label: "All Courses", value: "all" }];
-    const codes = [...new Set(data.data.map((r: any) => r.course).filter(Boolean))];
+    const codes = Array.from(new Set<string>(data.data.map((r: any) => r.course as string).filter(Boolean)));
     return [
       { label: "All Courses", value: "all" },
       ...codes.map((code: string) => ({ label: code, value: code })),

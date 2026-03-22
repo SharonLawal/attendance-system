@@ -1,5 +1,8 @@
 const { google } = require('googleapis');
 const asyncHandler = require('express-async-handler');
+const Papa = require('papaparse');
+const crypto = require('crypto');
+const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const Course = require('../models/Course');
 const AttendanceRecord = require('../models/AttendanceRecord');
@@ -49,14 +52,16 @@ const handleCallback = asyncHandler(async (req, res) => {
         oauth2Client.setCredentials(tokens);
         const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
         const userInfo = await oauth2.userinfo.get();
-        await User.findByIdAndUpdate(userId, {
-            googleTokens: {
+        const user = await User.findById(userId);
+        if (user) {
+            user.googleTokens = {
                 access_token: tokens.access_token,
                 refresh_token: tokens.refresh_token,
                 expiry_date: tokens.expiry_date,
                 email: userInfo.data.email,
-            },
-        });
+            };
+            await user.save();
+        }
         res.redirect(`${process.env.FRONTEND_URL}/lecturer/integrations?connected=google`);
     } catch (err) {
         console.error('Google OAuth callback error:', err);
@@ -85,10 +90,11 @@ const disconnectGoogle = asyncHandler(async (req, res) => {
 
 const getGoogleCourses = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('googleTokens');
-    if (!user.googleTokens?.access_token) {
+    const decryptedTokens = user.getDecryptedGoogleTokens();
+    if (!decryptedTokens?.access_token) {
         res.status(400); throw new Error('Google account not connected');
     }
-    const oauth2Client = getOAuthClient(user.googleTokens);
+    const oauth2Client = getOAuthClient(decryptedTokens);
     const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
     const response = await classroom.courses.list({ teacherId: 'me', courseStates: ['ACTIVE'] });
     const courses = (response.data.courses || []).map((c) => ({
@@ -98,6 +104,35 @@ const getGoogleCourses = asyncHandler(async (req, res) => {
         enrollmentCode: c.enrollmentCode || '',
     }));
     res.json({ courses });
+});
+
+// ─── List Google Classroom Assignments ──────────────────────────────────────
+
+const getGoogleAssignments = asyncHandler(async (req, res) => {
+    const { googleCourseId } = req.query;
+    if (!googleCourseId) { res.status(400); throw new Error('googleCourseId is required'); }
+    
+    const user = await User.findById(req.user._id).select('googleTokens');
+    const decryptedTokens = user.getDecryptedGoogleTokens();
+    if (!decryptedTokens?.access_token) {
+        res.status(400); throw new Error('Google account not connected');
+    }
+    const oauth2Client = getOAuthClient(decryptedTokens);
+    const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+    
+    const cwResponse = await classroom.courses.courseWork.list({
+        courseId: googleCourseId,
+        orderBy: 'updateTime desc',
+        pageSize: 10,
+    });
+    
+    const assignments = (cwResponse.data.courseWork || []).map((a) => ({
+        id: a.id,
+        title: a.title,
+        updateTime: a.updateTime,
+    }));
+    
+    res.json({ assignments });
 });
 
 // ─── Helper: find VeriPoint users from a list of Google emails ───────────────
@@ -127,11 +162,12 @@ const syncRoster = asyncHandler(async (req, res) => {
     if (!course) { res.status(404); throw new Error('VeriPoint course not found or unauthorized'); }
 
     const user = await User.findById(req.user._id).select('googleTokens');
-    if (!user.googleTokens?.access_token) {
+    const decryptedTokens = user.getDecryptedGoogleTokens();
+    if (!decryptedTokens?.access_token) {
         res.status(400); throw new Error('Google account not connected');
     }
 
-    const oauth2Client = getOAuthClient(user.googleTokens);
+    const oauth2Client = getOAuthClient(decryptedTokens);
     const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
 
     const response = await classroom.courses.students.list({ courseId: googleCourseId });
@@ -183,42 +219,40 @@ const syncRoster = asyncHandler(async (req, res) => {
 // No manual assignment selection needed.
 
 const syncLatestAttendance = asyncHandler(async (req, res) => {
-    const { googleCourseId, veriPointCourseId } = req.body;
+    const { googleCourseId, veriPointCourseId, assignmentId } = req.body;
 
-    if (!googleCourseId || !veriPointCourseId) {
-        res.status(400); throw new Error('googleCourseId and veriPointCourseId are required');
+    if (!googleCourseId || !veriPointCourseId || !assignmentId) {
+        res.status(400); throw new Error('googleCourseId, veriPointCourseId, and assignmentId are required');
     }
 
     const course = await Course.findOne({ _id: veriPointCourseId, lecturerId: req.user._id });
     if (!course) { res.status(404); throw new Error('VeriPoint course not found or unauthorized'); }
 
     const user = await User.findById(req.user._id).select('googleTokens');
-    if (!user.googleTokens?.access_token) {
+    const decryptedTokens = user.getDecryptedGoogleTokens();
+    if (!decryptedTokens?.access_token) {
         res.status(400); throw new Error('Google account not connected');
     }
 
-    const oauth2Client = getOAuthClient(user.googleTokens);
+    const oauth2Client = getOAuthClient(decryptedTokens);
     const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
 
-    // Step 1: Get the most recently created assignment for this course
-    const cwResponse = await classroom.courses.courseWork.list({
+    // Step 1: Get the specific assignment by ID
+    const cwResponse = await classroom.courses.courseWork.get({
         courseId: googleCourseId,
-        orderBy: 'updateTime desc',
-        pageSize: 1,   // We only want the latest
+        id: assignmentId,
     });
 
-    const courseWorkItems = cwResponse.data.courseWork || [];
-    if (courseWorkItems.length === 0) {
-        res.status(400);
-        throw new Error('No assignments found in this Google Classroom course. Create an attendance assignment first.');
+    const targetAssignment = cwResponse.data;
+    if (!targetAssignment) {
+        res.status(404);
+        throw new Error('Assignment not found in Google Classroom.');
     }
-
-    const latestAssignment = courseWorkItems[0];
 
     // Step 2: Get all submissions that were turned in for that assignment
     const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
         courseId: googleCourseId,
-        courseWorkId: latestAssignment.id,
+        courseWorkId: targetAssignment.id,
         states: ['TURNED_IN', 'RETURNED'],
     });
 
@@ -227,10 +261,10 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
     if (submissions.length === 0) {
         res.json({
             success: true,
-            message: 'No submissions found for the latest assignment yet.',
+            message: 'No submissions found for the selected assignment yet.',
             syncedCount: 0,
             totalSubmissions: 0,
-            assignmentTitle: latestAssignment.title,
+            assignmentTitle: targetAssignment.title,
         });
         return;
     }
@@ -248,23 +282,38 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
         }
     }
 
-    // Step 4: Match to VeriPoint users via linkedGoogleEmail
+    // Step 5: Match to VeriPoint users via linkedGoogleEmail
     const matchedUsers = await findUsersByGoogleEmails(submitterEmails);
 
-    // Step 5: Create a background LMS session to attach records to
-    const session = await AttendanceSession.create({
+    const unmatchedEmails = [];
+    for (const email of submitterEmails) {
+        if (!matchedUsers.some(u => u.email === email || u.linkedGoogleEmail === email)) {
+            unmatchedEmails.push(email);
+        }
+    }
+
+    // Step 6: Create or retrieve a background LMS session
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let session = await AttendanceSession.findOne({
         courseId: veriPointCourseId,
         lecturerId: req.user._id,
-        otcCode: '000000',
-        startTime: new Date(),
-        endTime: new Date(),
-        locationPolygon: {
-            type: 'Polygon',
-            coordinates: [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]],
-        },
+        isOnline: true,
+        createdAt: { $gte: today }
     });
 
-    // Step 6: Bulk insert attendance records, ignore duplicates
+    if (!session) {
+        session = await AttendanceSession.create({
+            courseId: veriPointCourseId,
+            lecturerId: req.user._id,
+            otcCode: '000000',
+            startTime: new Date(),
+            endTime: new Date(),
+            isOnline: true
+        });
+    }
+
+    // Step 7: Bulk insert attendance records, ignore duplicates
     const records = matchedUsers.map((u) => ({
         sessionId: session._id,
         studentId: u._id,
@@ -289,11 +338,12 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
 
     res.json({
         success: true,
-        message: `${inserted} students marked Present from "${latestAssignment.title}"`,
+        message: `${inserted} students marked Present from "${targetAssignment.title}"`,
         syncedCount: inserted,
         totalSubmissions: submissions.length,
         unmatched: submissions.length - inserted,
-        assignmentTitle: latestAssignment.title,
+        unmatchedEmails,
+        assignmentTitle: targetAssignment.title,
     });
 });
 
@@ -323,42 +373,33 @@ const importMeetCsv = asyncHandler(async (req, res) => {
     const course = await Course.findOne({ _id: veriPointCourseId, lecturerId: req.user._id });
     if (!course) { res.status(404); throw new Error('VeriPoint course not found or unauthorized'); }
 
-    // ── Parse CSV in-memory ──────────────────────────────────────────────────
-    // Handles both \r\n and \n line endings. Skips blank lines.
+    // ── Parse CSV in-memory with PapaParse ──────────────────────────────────
     const csvText = req.file.buffer.toString('utf8');
-    const lines = csvText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const parsed = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (h) => h.toLowerCase().replace(/[^a-z]/g, '')
+    });
 
-    if (lines.length < 2) {
+    if (parsed.errors.length > 0 && parsed.data.length === 0) {
+        res.status(400); throw new Error('Failed to parse CSV file: ' + parsed.errors[0].message);
+    }
+
+    if (parsed.data.length === 0) {
         res.status(400); throw new Error('CSV file appears to be empty or has no data rows');
     }
 
-    // Parse header row — find which column index holds the email
-    const parseRow = (line) => {
-        // Handle quoted fields (e.g. "Doe, Jane")
-        const cols = [];
-        let current = '';
-        let inQuotes = false;
-        for (const ch of line) {
-            if (ch === '"') { inQuotes = !inQuotes; }
-            else if (ch === ',' && !inQuotes) { cols.push(current.trim()); current = ''; }
-            else { current += ch; }
-        }
-        cols.push(current.trim());
-        return cols;
-    };
+    const fileHeaders = Object.keys(parsed.data[0] || {});
+    const emailColKey = fileHeaders.find(h => h.includes('email'));
 
-    const headers = parseRow(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
-    const emailColIndex = headers.findIndex((h) => h.includes('email'));
-
-    if (emailColIndex === -1) {
-        res.status(400); throw new Error('CSV must contain an "Email" column. Ensure you are uploading a file exported from the Google Meet Attendance List extension.');
+    if (!emailColKey) {
+        res.status(400); throw new Error('CSV must contain an "Email" column. Ensure you are uploading a valid CSV.');
     }
 
     // Extract unique participant emails from data rows
     const meetEmails = [];
-    for (let i = 1; i < lines.length; i++) {
-        const cols = parseRow(lines[i]);
-        const email = cols[emailColIndex]?.toLowerCase().trim();
+    for (const row of parsed.data) {
+        const email = row[emailColKey]?.toLowerCase().trim();
         if (email && email.includes('@') && !meetEmails.includes(email)) {
             meetEmails.push(email);
         }
@@ -371,18 +412,33 @@ const importMeetCsv = asyncHandler(async (req, res) => {
     // ── Match emails to VeriPoint students ───────────────────────────────────
     const matchedUsers = await findUsersByGoogleEmails(meetEmails);
 
-    // ── Create attendance session + records ──────────────────────────────────
-    const session = await AttendanceSession.create({
+    const unmatchedEmails = [];
+    for (const email of meetEmails) {
+        if (!matchedUsers.some(u => u.email === email || u.linkedGoogleEmail === email)) {
+            unmatchedEmails.push(email);
+        }
+    }
+
+    // ── Create or retrieve attendance session ────────────────────────────────
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let session = await AttendanceSession.findOne({
         courseId: veriPointCourseId,
         lecturerId: req.user._id,
-        otcCode: '000000',
-        startTime: new Date(),
-        endTime: new Date(),
-        locationPolygon: {
-            type: 'Polygon',
-            coordinates: [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]],
-        },
+        isOnline: true,
+        createdAt: { $gte: today }
     });
+
+    if (!session) {
+        session = await AttendanceSession.create({
+            courseId: veriPointCourseId,
+            lecturerId: req.user._id,
+            otcCode: '000000',
+            startTime: new Date(),
+            endTime: new Date(),
+            isOnline: true
+        });
+    }
 
     const records = matchedUsers.map((u) => ({
         sessionId: session._id,
@@ -412,6 +468,7 @@ const importMeetCsv = asyncHandler(async (req, res) => {
         syncedCount: inserted,
         totalInCsv: meetEmails.length,
         unmatched: meetEmails.length - inserted,
+        unmatchedEmails,
     });
 });
 
@@ -421,6 +478,7 @@ module.exports = {
     getConnectionStatus,
     disconnectGoogle,
     getGoogleCourses,
+    getGoogleAssignments,
     syncRoster,
     syncLatestAttendance,
     importMeetCsv,

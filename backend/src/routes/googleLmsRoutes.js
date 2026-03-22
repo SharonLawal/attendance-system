@@ -6,6 +6,7 @@ const {
     getConnectionStatus,
     disconnectGoogle,
     getGoogleCourses,
+    getGoogleAssignments,
     syncRoster,
     syncLatestAttendance,
     importMeetCsv,
@@ -38,8 +39,9 @@ router.get('/auth', getAuthUrl);
 router.get('/status', getConnectionStatus);
 router.delete('/disconnect', disconnectGoogle);
 router.get('/courses', getGoogleCourses);
+router.get('/assignments', getGoogleAssignments);
 router.post('/sync-roster', syncRoster);
-router.post('/sync-attendance', syncLatestAttendance);  // One-click — auto picks latest assignment
+router.post('/sync-attendance', syncLatestAttendance);  // Sync specific assignment
 router.post('/import-meet-csv', upload.single('file'), importMeetCsv);  // CSV from meetlist.io extension
 
 module.exports = router;

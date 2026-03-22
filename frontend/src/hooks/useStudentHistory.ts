@@ -7,7 +7,9 @@ export function useStudentHistory(page: number, limit: number, searchTerm?: stri
     queryKey: ['student', 'history', page, limit, searchTerm, courseFilter],
     queryFn: async () => {
       const response = await studentService.getHistory(page, limit);
-      return transformPaginatedResponse(response, transformHistoryItem);
+      const result = transformPaginatedResponse(response, transformHistoryItem);
+      if (!result.success) throw new Error(result.message);
+      return result.data;
     },
     staleTime: 1 * 60 * 1000, // 1 minute
   });

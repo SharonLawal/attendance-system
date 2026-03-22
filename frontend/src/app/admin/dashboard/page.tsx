@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Users, AlertTriangle, Play } from "lucide-react";
 import { useAdminDashboard, useAdminUsers } from "@/hooks/useAdminData";
 import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/Skeleton";
 import * as adminService from "@/services/adminService";
 
 export default function AdminDashboard() {
@@ -20,15 +21,6 @@ export default function AdminDashboard() {
   const { data: dashboardData, isLoading: isLoadingStats } = useAdminDashboard();
   const { data: usersData, isLoading: isLoadingUsers } = useAdminUsers(1, 3, searchTerm, "All");
 
-  // Fetch real audit logs
-  const { data: auditLogs, isLoading: isLoadingLogs } = useQuery({
-    queryKey: ["admin", "audit-logs"],
-    queryFn: async () => {
-      const res = await adminService.getAuditLogs(10);
-      return Array.isArray(res) ? res : [];
-    },
-    staleTime: 60 * 1000,
-  });
 
   const filteredUsers = usersData?.users || [];
 
@@ -132,7 +124,7 @@ export default function AdminDashboard() {
                     {stat.title}
                   </p>
                   <h3 className="text-2xl font-bold font-display text-slate-800">
-                    {isLoadingStats ? "-" : stat.value}
+                    {isLoadingStats ? <Skeleton className="h-8 w-16 mt-1" /> : stat.value}
                   </h3>
                 </div>
               </CardContent>
@@ -140,9 +132,9 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Quick User Directory */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-4">
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="flex flex-row justify-between items-center border-b border-slate-100 pb-4">
                 <div>
@@ -173,50 +165,6 @@ export default function AdminDashboard() {
                     emptyTitle="No users found matching that query."
                   />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Audit Log - real data */}
-          <div className="lg:col-span-1">
-            <Card className="border-slate-200 shadow-sm h-full flex flex-col">
-              <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ActivitySquare className="w-5 h-5 text-babcock-blue" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 flex-1 overflow-y-auto max-h-[400px]">
-                {isLoadingLogs ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-babcock-blue" />
-                  </div>
-                ) : !auditLogs || auditLogs.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400 text-sm">
-                    No recent activity to display.
-                  </div>
-                ) : (
-                  <ol className="relative border-l border-slate-200 ml-3 space-y-6">
-                    {auditLogs.map((log: any) => (
-                      <li key={log._id} className="mb-6 ml-6 last:mb-0">
-                        <span className="absolute flex items-center justify-center w-6 h-6 bg-blue-50 rounded-full -left-3 ring-4 ring-white">
-                          <div className="w-2 h-2 rounded-full bg-babcock-blue" />
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
-                            {new Date(log.timestamp).toLocaleString()}
-                          </span>
-                          <h4 className="text-sm font-semibold text-slate-800">
-                            {log.performedBy?.fullName || "System"}
-                          </h4>
-                          <p className="text-sm text-slate-500 mt-0.5">
-                            {log.action}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                )}
               </CardContent>
             </Card>
           </div>

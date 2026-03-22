@@ -9,7 +9,9 @@ export function useLecturerDashboard() {
     queryKey: ['lecturer', 'dashboard'],
     queryFn: async () => {
       const response = await lecturerService.getDashboard();
-      return transformLecturerDashboard(response);
+      const result = transformLecturerDashboard(response);
+      if (!result.success) throw new Error(result.message);
+      return result.data;
     },
     staleTime: 2 * 60 * 1000, 
   });

@@ -53,9 +53,9 @@ export function DataTable<T>({
     }
 
     return (
-        <div className={cn("w-full overflow-hidden bg-white rounded-lg border border-slate-200 shadow-sm", className)}>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left whitespace-nowrap">
+        <div className={cn("w-full max-w-full overflow-hidden bg-white rounded-lg border border-slate-200 shadow-sm", className)}>
+            <div className="w-full overflow-x-auto custom-scrollbar">
+                <table className="w-full min-w-full text-sm text-left whitespace-nowrap">
                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
                         <tr>
                             {columns.map((col, index) => (

@@ -31,10 +31,7 @@ export const getActiveSession = async () => {
   return res.data;
 };
 
-export const getNotifications = async () => {
-  const res = await apiClient.get('/api/student/notifications');
-  return res.data;
-};
+
 
 export const markAttendance = async (otcCode: string, latitude: number, longitude: number) => {
   const res = await apiClient.post('/api/attendance/mark', { otcCode, latitude, longitude });

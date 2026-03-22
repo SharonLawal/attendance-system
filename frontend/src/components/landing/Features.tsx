@@ -54,7 +54,7 @@ export function Features() {
             </div>
             <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Time-based Verification</h3>
             <p className="text-slate-400 text-sm leading-relaxed mb-8">
-              One-time codes that expire automatically to prevent attendance fraud and proxy marking.
+              Cryptographic One-Time Codes (OTC) that securely bind a student's session to their localized GPS footprint.
             </p>
             
             {/* Visual: Countdown */}
@@ -95,9 +95,9 @@ export function Features() {
              <div className="h-12 w-12 bg-slate-800/80 rounded-lg flex items-center justify-center text-yellow-400 mb-6 border border-white/10 shadow-lg shadow-black/20">
               <RefreshCcw size={24} strokeWidth={2.5} />
             </div>
-            <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Seamless Sync</h3>
+            <h3 className="text-xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">Google Classroom Sync</h3>
             <p className="text-slate-400 text-sm leading-relaxed mb-8">
-              Seamlessly sync attendance data with existing learning management systems.
+              Directly synchronize roster data and push daily attendance sheets exclusively to the Google Classroom API.
             </p>
             
             {/* Visual: Data Pipeline */}

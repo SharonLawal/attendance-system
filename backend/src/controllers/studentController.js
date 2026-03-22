@@ -1,10 +1,61 @@
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
+const { google } = require('googleapis');
 const AttendanceRecord = require('../models/AttendanceRecord');
 const AttendanceSession = require('../models/AttendanceSession');
 const Course = require('../models/Course');
 const ClassSchedule = require('../models/ClassSchedule');
-const Notification = require('../models/Notification');
+const User = require('../models/User');
+
+// @desc    Get Google OAuth URL for linking student email
+// @route   GET /api/student/link-google
+// @access  Private/Student
+const getGoogleAuthUrl = asyncHandler(async (req, res) => {
+    const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        `${process.env.BACKEND_URL}/api/student/link-google/callback`
+    );
+
+    const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: ['https://www.googleapis.com/auth/userinfo.email'],
+        state: req.user._id.toString() 
+    });
+
+    res.json({ url });
+});
+
+// @desc    Handle Google OAuth callback to link email
+// @route   GET /api/student/link-google/callback
+// @access  Public (relies on state param)
+const linkGoogleCallback = asyncHandler(async (req, res) => {
+    const { code, state } = req.query;
+    if (!code || !state) {
+        return res.redirect(`${process.env.FRONTEND_URL}/student/profile?error=invalid_callback`);
+    }
+
+    const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        `${process.env.BACKEND_URL}/api/student/link-google/callback`
+    );
+
+    try {
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+
+        const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+        const userInfo = await oauth2.userinfo.get();
+        const email = userInfo.data.email;
+
+        await User.findByIdAndUpdate(state, { linkedGoogleEmail: email });
+        res.redirect(`${process.env.FRONTEND_URL}/student?linked=success`);
+    } catch (error) {
+        console.error('Google OAuth linking error:', error.message);
+        res.redirect(`${process.env.FRONTEND_URL}/student?error=oauth_failed`);
+    }
+});
 
 // @desc    Get aggregated dashboard data for student
 // @route   GET /api/student/dashboard
@@ -245,23 +296,14 @@ const getActiveSession = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Get user notifications
-// @route   GET /api/student/notifications
-// @access  Private/Student
-const getNotifications = asyncHandler(async (req, res) => {
-    const notifications = await Notification.find({ studentId: req.user._id })
-        .sort({ createdAt: -1 })
-        .limit(10);
 
-    res.json(notifications);
-});
 
 module.exports = {
     getDashboard,
     getDashboardStats,
     getHistory,
     getCourses,
-    getSchedule,
     getActiveSession,
-    getNotifications,
+    getGoogleAuthUrl,
+    linkGoogleCallback,
 };

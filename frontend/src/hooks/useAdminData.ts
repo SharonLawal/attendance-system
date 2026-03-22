@@ -7,7 +7,9 @@ export function useAdminDashboard() {
     queryKey: ['admin', 'dashboard'],
     queryFn: async () => {
       const response = await adminService.getStats();
-      return transformAdminStats(response);
+      const result = transformAdminStats(response);
+      if (!result.success) throw new Error(result.message);
+      return result.data;
     },
     staleTime: 5 * 60 * 1000, 
   });
@@ -18,7 +20,9 @@ export function useAdminUsers(page: number = 1, limit: number = 10, search: stri
     queryKey: ['admin', 'users', page, limit, search, role],
     queryFn: async () => {
       const response = await adminService.getUsers(page, limit, search, role === 'All' ? '' : role);
-      return transformAdminUsers(response);
+      const result = transformAdminUsers(response);
+      if (!result.success) throw new Error(result.message);
+      return result.data;
     },
     staleTime: 60 * 1000, // 1 minute
   });

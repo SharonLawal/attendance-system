@@ -97,6 +97,7 @@ function MicrosoftConnectionCard() {
 function GoogleAttendanceSyncPanel() {
     const [googleCourseId, setGoogleCourseId] = useState("");
     const [veriPointCourseId, setVeriPointCourseId] = useState("");
+    const [assignmentId, setAssignmentId] = useState("");
     const [result, setResult] = useState<any>(null);
     const queryClient = useQueryClient();
 
@@ -110,51 +111,77 @@ function GoogleAttendanceSyncPanel() {
         queryFn: async () => { const res = await lecturerService.getMyCourses(); return res.data; },
         staleTime: 5 * 60 * 1000,
     });
+    const { data: assignmentsData, isLoading: loadingAssignments } = useQuery({
+        queryKey: ["google", "assignments", googleCourseId],
+        queryFn: () => lecturerService.getGoogleAssignments(googleCourseId),
+        enabled: !!googleCourseId,
+        staleTime: 5 * 60 * 1000,
+    });
 
     const syncMutation = useMutation({
-        mutationFn: () => lecturerService.syncGoogleAttendance(googleCourseId, veriPointCourseId),
+        mutationFn: () => lecturerService.syncGoogleAttendance(googleCourseId, veriPointCourseId, assignmentId),
         onSuccess: (data) => { setResult(data); queryClient.invalidateQueries({ queryKey: ["lecturer", "syncHistory"] }); toast.success(data.message); },
         onError: (err: any) => toast.error(err.response?.data?.message || "Sync failed"),
     });
 
     const gOptions = (googleCoursesData?.courses || []).map((c: any) => ({ label: c.section ? `${c.name} — ${c.section}` : c.name, value: c.id }));
     const vpOptions = (vpCoursesData || []).map((c: any) => ({ label: `${c.courseCode} — ${c.courseName}`, value: c._id }));
+    const aOptions = (assignmentsData?.assignments || []).map((a: any) => ({
+        label: `${a.title} (${new Date(a.updateTime).toLocaleDateString()})`,
+        value: a.id
+    }));
 
     return (
         <div className="space-y-5">
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 space-y-1.5">
                 <p className="text-sm font-semibold text-blue-800 flex items-center gap-2"><Video className="w-4 h-4" />How it works</p>
                 <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
-                    <li>During your Google Meet, share the Google Classroom attendance assignment link in chat</li>
-                    <li>Students click the link and hit Submit — takes 5 seconds</li>
-                    <li>After class, click Sync Attendance below — everyone who submitted is marked Present</li>
+                    <li>Select the Google Classroom course and the target VeriPoint course</li>
+                    <li>Choose the specific attendance assignment you posted for today's class</li>
+                    <li>Click Sync Attendance below — everyone who submitted is marked Present</li>
                 </ol>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Google Classroom Course</label>
-                    <Select value={googleCourseId} onChange={setGoogleCourseId} placeholder={loadingGCourses ? "Loading..." : "Select Google course..."} options={gOptions} />
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Google Course</label>
+                    <Select value={googleCourseId} onChange={(val) => { setGoogleCourseId(val); setAssignmentId(""); }} placeholder={loadingGCourses ? "Loading..." : "Select..."} options={gOptions} />
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Assignment</label>
+                    <Select value={assignmentId} onChange={setAssignmentId} placeholder={loadingAssignments ? "Loading..." : "Select assignment..."} options={aOptions} disabled={!googleCourseId} />
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">VeriPoint Course</label>
-                    <Select value={veriPointCourseId} onChange={setVeriPointCourseId} placeholder="Select VeriPoint course..." options={vpOptions} />
+                    <Select value={veriPointCourseId} onChange={setVeriPointCourseId} placeholder="Select..." options={vpOptions} />
                 </div>
             </div>
             <Button className="w-full gap-2 bg-babcock-blue hover:bg-babcock-blue/90 font-semibold h-12 text-base shadow-md shadow-babcock-blue/20"
                 onClick={() => { setResult(null); syncMutation.mutate(); }}
-                disabled={!googleCourseId || !veriPointCourseId || syncMutation.isPending} isLoading={syncMutation.isPending}>
+                disabled={!googleCourseId || !veriPointCourseId || !assignmentId || syncMutation.isPending} isLoading={syncMutation.isPending}>
                 <RefreshCcw className="w-4 h-4" />
-                {syncMutation.isPending ? "Syncing..." : "Sync Attendance from Latest Class"}
+                {syncMutation.isPending ? "Syncing..." : "Sync Selected Assignment"}
             </Button>
             {result && (
                 <div className="bg-babcock-blue/5 border border-babcock-blue/20 rounded-lg p-4 animate-in fade-in">
                     <p className="font-semibold text-babcock-blue text-sm mb-1">✓ Attendance Synced</p>
                     {result.assignmentTitle && <p className="text-xs text-slate-500 mb-3">Source: <span className="font-medium text-slate-700">{result.assignmentTitle}</span></p>}
-                    <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
                         <div className="bg-white rounded-lg p-3 border"><p className="text-2xl font-bold text-babcock-blue">{result.syncedCount}</p><p className="text-xs text-slate-500 mt-1">Marked Present</p></div>
                         <div className="bg-white rounded-lg p-3 border"><p className="text-2xl font-bold text-slate-700">{result.totalSubmissions}</p><p className="text-xs text-slate-500 mt-1">Submissions</p></div>
                         <div className="bg-white rounded-lg p-3 border border-amber-100"><p className="text-2xl font-bold text-amber-600">{result.unmatched ?? 0}</p><p className="text-xs text-slate-500 mt-1">Unmatched</p></div>
                     </div>
+                    {result.unmatchedEmails?.length > 0 && (
+                        <div className="mt-3">
+                            <p className="text-xs font-semibold text-amber-700 flex items-center gap-1 mb-1">
+                                <AlertTriangle className="w-3.5 h-3.5" /> These emails have no VeriPoint account:
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {result.unmatchedEmails.map((e: string) => (
+                                    <span key={e} className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 font-mono rounded-md">{e}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -184,7 +211,7 @@ function CSVUploadPanel() {
             formData.append("file", file!);
             formData.append("veriPointCourseId", veriPointCourseId);
             formData.append("platform", platform);
-            const res = await apiClient.post("/api/lms/csv/sync-attendance", formData, {
+            const res = await apiClient.post("/api/lms/google/import-meet-csv", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             return res.data;
@@ -279,7 +306,7 @@ function CSVUploadPanel() {
             {result && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 animate-in fade-in">
                     <p className="font-semibold text-emerald-800 text-sm mb-3">✓ CSV Processed Successfully</p>
-                    <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
                         <div className="bg-white rounded-lg p-3 border border-emerald-100"><p className="text-2xl font-bold text-emerald-600">{result.syncedCount}</p><p className="text-xs text-slate-500 mt-1">Marked Present</p></div>
                         <div className="bg-white rounded-lg p-3 border"><p className="text-2xl font-bold text-slate-700">{result.totalInCSV}</p><p className="text-xs text-slate-500 mt-1">In CSV</p></div>
                         <div className="bg-white rounded-lg p-3 border border-amber-100"><p className="text-2xl font-bold text-amber-600">{result.unmatched}</p><p className="text-xs text-slate-500 mt-1">Unmatched</p></div>
@@ -343,7 +370,7 @@ function RosterSyncPanel() {
             {result && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 animate-in fade-in">
                     <p className="font-semibold text-emerald-800 text-sm mb-3">✓ Roster Import Complete</p>
-                    <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
                         <div className="bg-white rounded-lg p-3 border border-emerald-100"><p className="text-2xl font-bold text-emerald-600">{result.syncedCount}</p><p className="text-xs text-slate-500 mt-1">Imported</p></div>
                         <div className="bg-white rounded-lg p-3 border"><p className="text-2xl font-bold text-slate-700">{result.totalInGoogle}</p><p className="text-xs text-slate-500 mt-1">In Google</p></div>
                         <div className="bg-white rounded-lg p-3 border border-amber-100"><p className="text-2xl font-bold text-amber-600">{result.unmatched}</p><p className="text-xs text-slate-500 mt-1">No account</p></div>

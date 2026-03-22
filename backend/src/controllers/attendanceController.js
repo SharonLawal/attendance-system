@@ -3,7 +3,6 @@ const { z } = require('zod');
 const mongoose = require('mongoose');
 const AttendanceSession = require('../models/AttendanceSession');
 const AttendanceRecord = require('../models/AttendanceRecord');
-const Notification = require('../models/Notification');
 const Course = require('../models/Course');
 
 const markAttendanceSchema = z.object({
@@ -11,6 +10,33 @@ const markAttendanceSchema = z.object({
     latitude: z.number({ required_error: 'Latitude is required' }),
     longitude: z.number({ required_error: 'Longitude is required' }),
 });
+
+// Helper function to generate a strict geographic polygon approximation (circle)
+const generateGeoJSONCircle = (center, radiusInMeters, points = 32) => {
+    const coords = {
+        latitude: center[1],
+        longitude: center[0]
+    };
+
+    const ret = [];
+    const distanceX = radiusInMeters / (111320 * Math.cos(coords.latitude * Math.PI / 180));
+    const distanceY = radiusInMeters / 110574;
+
+    let theta, x, y;
+    for (let i = 0; i < points; i++) {
+        theta = (i / points) * (2 * Math.PI);
+        x = distanceX * Math.cos(theta);
+        y = distanceY * Math.sin(theta);
+
+        ret.push([coords.longitude + x, coords.latitude + y]);
+    }
+    ret.push(ret[0]); // Close the polygon
+
+    return {
+        type: 'Polygon',
+        coordinates: [ret]
+    };
+};
 
 // Helper function to check attendance threshold
 const checkAttendanceThreshold = async (courseId, studentId) => {
@@ -49,13 +75,7 @@ const checkAttendanceThreshold = async (courseId, studentId) => {
         const presentCount = studentRecordsInCourse.length > 0 ? studentRecordsInCourse[0].presentCount : 0;
         const attendancePercentage = (presentCount / totalSessionsCount) * 100;
 
-        if (attendancePercentage < 75) {
-            const course = await Course.findById(courseId);
-            await Notification.create({
-                studentId,
-                message: `Warning: Your attendance for ${course.courseCode} has dropped below 75% (Current: ${attendancePercentage.toFixed(1)}%).`,
-            });
-        }
+        // Removed notification logic
     } catch (error) {
         console.error('Failed to calculate attendance threshold:', error);
     }
@@ -82,15 +102,14 @@ const markAttendance = asyncHandler(async (req, res) => {
         throw new Error('Session Expired');
     }
 
-    // 3. Check for geospatial intersection
+    // 3. Check for geospatial intersection with a buffer
+    const studentBufferPolygon = generateGeoJSONCircle([longitude, latitude], 15); // 15 meters buffer
+
     const validLocationSession = await AttendanceSession.findOne({
         _id: sessionByCode._id,
         locationPolygon: {
             $geoIntersects: {
-                $geometry: {
-                    type: 'Point',
-                    coordinates: [longitude, latitude] // GeoJSON is [lng, lat]
-                }
+                $geometry: studentBufferPolygon
             }
         }
     });
@@ -100,17 +119,40 @@ const markAttendance = asyncHandler(async (req, res) => {
         throw new Error('Location outside classroom bounds');
     }
 
-    // 4. Determine Enrollment & Save Record
-    try {
-        const course = await Course.findById(sessionByCode.courseId);
-        const isEnrolled = course.enrolledStudents && course.enrolledStudents.includes(studentId);
-        const recordStatus = isEnrolled ? 'Present' : 'Pending';
+        // 3.5 Location Spoofing Check (Impossible Travel)
+        const prevRecord = await AttendanceRecord.findOne({
+            studentId,
+            source: 'Manual_GPS',
+            createdAt: { $gte: new Date(Date.now() - 30 * 60 * 1000) } // Last 30 mins
+        }).sort({ createdAt: -1 });
 
+        if (prevRecord && prevRecord.coordinates && prevRecord.coordinates.latitude && String(prevRecord.sessionId) !== String(sessionByCode._id)) {
+            const R = 6371; // Earth radius in km
+            const dLat = (latitude - prevRecord.coordinates.latitude) * Math.PI / 180;
+            const dLon = (longitude - prevRecord.coordinates.longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(prevRecord.coordinates.latitude * Math.PI / 180) * Math.cos(latitude * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); // km
+            const timeDiff = (Date.now() - prevRecord.createdAt.getTime()) / (1000 * 60); // minutes
+
+            // Speed in km/h 
+            const speed = distance / (timeDiff / 60);
+            
+            // If speed is faster than 100 km/h and distance > 0.5km (impossible campus travel)
+            if (speed > 100 && distance > 0.5) {
+                 res.status(403);
+                 throw new Error('Location spoofing detected: Impossible travel pace between classes.');
+            }
+        }
+
+        // 4. Determine Enrollment & Save Record
         const record = await AttendanceRecord.create({
             sessionId: sessionByCode._id,
             studentId: studentId,
             status: recordStatus,
-            source: 'Manual_GPS'
+            source: 'Manual_GPS',
+            coordinates: { latitude, longitude }
         });
 
         if (!isEnrolled) {
@@ -131,13 +173,6 @@ const markAttendance = asyncHandler(async (req, res) => {
         // Fire-and-forget threshold check securely in the background
         checkAttendanceThreshold(sessionByCode.courseId, studentId);
 
-    } catch (error) {
-        // Handle uniqueness error (student already marked presence in this session)
-        if (error.code === 11000) {
-            res.status(400);
-            throw new Error('Attendance already marked for this session');
-        }
-        throw error;
     }
 });
 

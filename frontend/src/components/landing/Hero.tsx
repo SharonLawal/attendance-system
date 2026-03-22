@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -14,10 +15,14 @@ export function Hero() {
           </h1>
 
           <p className="text-lg text-slate-400 font-light leading-relaxed max-w-lg">
-            A geolocation-based attendance management system designed for
-            educational institutions, featuring dynamic zone verification and
-            real-time synchronization.
+            A geolocation-based attendance system enforcing physical presence through GPS buffer zones, Cryptographic One-Time Codes, and instant Google Classroom synchronization.
           </p>
+
+          <div className="flex items-center gap-4 mt-6">
+            <Link href="/login" className="px-8 py-3.5 rounded-full bg-primary text-white font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/25">
+              Access Dashboard
+            </Link>
+          </div>
         </div>
 
         {/* Right: Dashboard Preview */}

@@ -16,7 +16,21 @@ export function generateGeoJSONCircle(center: [number, number], radiusInMeters: 
   ret.push(ret[0]);
 
   return {
-    type: 'Polygon',
-    coordinates: [ret]
   };
+}
+
+export function getGeolocationErrorMessage(error: any): string {
+    if (error && typeof error.code === 'number') {
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                return "Location access is required to sign attendance. Please enable it in your browser settings.";
+            case error.POSITION_UNAVAILABLE:
+                return "Location information is unavailable.";
+            case error.TIMEOUT:
+                return "The request to get user location timed out.";
+            default:
+                return "An unknown error occurred while requesting location.";
+        }
+    }
+    return "Failed to establish location.";
 }

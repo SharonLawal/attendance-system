@@ -89,6 +89,11 @@ export const getGoogleCourses = async () => {
   return res.data;
 };
 
+export const getGoogleAssignments = async (googleCourseId: string) => {
+  const res = await apiClient.get(`/api/lms/google/assignments?googleCourseId=${googleCourseId}`);
+  return res.data;
+};
+
 export const syncGoogleRoster = async (
   googleCourseId: string,
   veriPointCourseId: string
@@ -100,14 +105,15 @@ export const syncGoogleRoster = async (
   return res.data;
 };
 
-// One-click sync — backend automatically picks the latest assignment
 export const syncGoogleAttendance = async (
   googleCourseId: string,
-  veriPointCourseId: string
+  veriPointCourseId: string,
+  assignmentId: string
 ) => {
   const res = await apiClient.post('/api/lms/google/sync-attendance', {
     googleCourseId,
     veriPointCourseId,
+    assignmentId,
   });
   return res.data;
 };

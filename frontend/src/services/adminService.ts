@@ -13,7 +13,3 @@ export const getUsers = async (page = 1, limit = 50, search = '', role = 'all') 
   return res.data;
 };
 
-export const getAuditLogs = async (limit = 20) => {
-  const res = await apiClient.get('/api/admin/audit-logs', { params: { limit } });
-  return res.data;
-};

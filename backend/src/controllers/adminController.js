@@ -1,8 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const AttendanceSession = require('../models/AttendanceSession');
-const Notification = require('../models/Notification');
-const AuditLog = require('../models/AuditLog');
 
 // @desc    Get top level system stats
 // @route   GET /api/admin/stats
@@ -15,7 +13,7 @@ const getSystemStats = asyncHandler(async (req, res) => {
         endTime: { $gt: now }
     });
 
-    const flaggedAbsences = await Notification.countDocuments();
+    const flaggedAbsences = 0; // Removed notification feature
 
     // Mock system health
     const systemHealth = '99.9%';
@@ -75,24 +73,7 @@ const getUsers = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Get real-time audit logs
-// @route   GET /api/admin/audit-logs
-// @access  Private/Admin
-const getAuditLogs = asyncHandler(async (req, res) => {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 20;
-
-    const logs = await AuditLog.find()
-        .sort({ timestamp: -1 })
-        .limit(limit)
-        .populate('performedBy', 'fullName role')
-        .populate('targetUserId', 'fullName')
-        .populate('targetCourseId', 'courseCode');
-
-    res.json(logs);
-});
-
 module.exports = {
     getSystemStats,
     getUsers,
-    getAuditLogs,
 };

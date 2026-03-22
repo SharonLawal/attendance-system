@@ -60,7 +60,7 @@ export function Workflow() {
                   3. Automated LMS Sync
                 </h3>
                 <p className="text-sm text-slate-400 mt-1">
-                  Upon successful verification, attendance is marked as &quot;Present&quot; and instantly pushed to the <strong>Learning Management System</strong>.
+                  Upon successful verification against the geofence buffer, attendance is marked as &quot;Present&quot; and immediately pushed to <strong>Google Classroom</strong>.
                 </p>
               </div>
             </div>
