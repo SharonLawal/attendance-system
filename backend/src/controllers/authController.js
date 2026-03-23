@@ -332,6 +332,30 @@ const unlinkGoogleEmail = asyncHandler(async (req, res) => {
     res.json({ success: true, message: 'Gmail unlinked successfully' });
 });
 
+// @desc    Upload Profile Picture
+// @route   POST /api/auth/upload-avatar
+// @access  Private (any role)
+const uploadAvatar = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        res.status(400);
+        throw new Error('No image file provided');
+    }
+    const avatarUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/${req.file.filename}`;
+    
+    // We update the user and return the new URL
+    const user = await User.findByIdAndUpdate(
+        req.user._id, 
+        { profilePicture: avatarUrl },
+        { new: true } // Return updated doc
+    );
+    
+    res.json({ 
+        success: true, 
+        message: 'Profile picture updated successfully',
+        avatarUrl 
+    });
+});
+
 module.exports = {
     registerUser,
     loginUser,
@@ -344,4 +368,5 @@ module.exports = {
     resetPassword,
     linkGoogleEmail,
     unlinkGoogleEmail,
+    uploadAvatar,
 };

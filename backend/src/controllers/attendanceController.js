@@ -147,6 +147,11 @@ const markAttendance = asyncHandler(async (req, res) => {
         }
 
         // 4. Determine Enrollment & Save Record
+        const course = await Course.findById(sessionByCode.courseId);
+        // Cast objectids to strings for robust comparison
+        const isEnrolled = course && course.enrolledStudents.some(id => id.toString() === studentId.toString());
+        const recordStatus = isEnrolled ? 'Present' : 'Pending';
+
         const record = await AttendanceRecord.create({
             sessionId: sessionByCode._id,
             studentId: studentId,
@@ -172,8 +177,6 @@ const markAttendance = asyncHandler(async (req, res) => {
 
         // Fire-and-forget threshold check securely in the background
         checkAttendanceThreshold(sessionByCode.courseId, studentId);
-
-    }
 });
 
 module.exports = {

@@ -162,6 +162,26 @@ export default function StudentProfile() {
     }, 1000);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const res = await apiClient.post("/api/auth/upload-avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (res.data.success) {
+        toast.success("Profile picture updated successfully!");
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to upload image.");
+    }
+  };
+
   return (
     <DashboardLayout role="student">
       <div className="space-y-6 max-w-4xl mx-auto">
@@ -178,11 +198,21 @@ export default function StudentProfile() {
           {/* Identity Card */}
           <Card className="md:col-span-1 border-0 shadow-sm ring-1 ring-slate-200">
             <CardContent className="p-6 flex flex-col items-center text-center">
-              <div className="w-32 h-32 rounded-full bg-slate-100 border-4 border-white shadow-xl flex flex-col items-center justify-center mb-6 overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-tr from-babcock-blue to-babcock-gold/40" />
-                <span className="text-4xl font-bold text-white relative z-10 font-display">
-                  {initials}
-                </span>
+              <div className="w-32 h-32 rounded-full bg-slate-100 border-4 border-white shadow-xl flex flex-col items-center justify-center mb-6 overflow-hidden relative group cursor-pointer">
+                {(user as any)?.profilePicture ? (
+                  <img src={(user as any).profilePicture} alt="Avatar" className="w-full h-full object-cover relative z-10" />
+                ) : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-tr from-babcock-blue to-babcock-gold/40" />
+                    <span className="text-4xl font-bold text-white relative z-10 font-display">
+                      {initials}
+                    </span>
+                  </>
+                )}
+                <div className="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center transition-all z-20">
+                  <span className="text-white text-[10px] font-semibold uppercase tracking-wider">Upload</span>
+                </div>
+                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-30" onChange={handleImageUpload} />
               </div>
               <h2 className="text-xl font-bold font-display text-slate-800">
                 {user?.fullName || "Student Profile"}

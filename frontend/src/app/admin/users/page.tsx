@@ -97,12 +97,12 @@ export default function AdminUsers() {
                         <p className="text-slate-500 mt-1">Create, manage, and configure university accounts.</p>
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <Button variant="outline" className="gap-2 sm:flex-1 bg-white" onClick={() => setIsBulkUploadModalOpen(true)}>
-                            <UploadCloud className="w-4 h-4 text-babcock-blue" />
+                        <Button variant="outline" className="gap-2 sm:flex-1 bg-white whitespace-nowrap" onClick={() => setIsBulkUploadModalOpen(true)}>
+                            <UploadCloud className="w-4 h-4 text-babcock-blue shrink-0" />
                             Bulk Import
                         </Button>
-                        <Button className="gap-2 sm:flex-1 shadow-md shadow-babcock-blue/20" onClick={() => setIsAddUserModalOpen(true)}>
-                            <UserPlus className="w-4 h-4" />
+                        <Button className="gap-2 sm:flex-1 shadow-md shadow-babcock-blue/20 whitespace-nowrap" onClick={() => setIsAddUserModalOpen(true)}>
+                            <UserPlus className="w-4 h-4 shrink-0" />
                             Add User
                         </Button>
                     </div>

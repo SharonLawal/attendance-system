@@ -62,7 +62,7 @@ const courseSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Define indexes for fast querying
-courseSchema.index({ courseCode: 1 });
+// courseCode is globally unique via schema property.
 courseSchema.index({ lecturerId: 1 });
 courseSchema.index({ status: 1 });
 courseSchema.index({ lecturerId: 1, status: 1 });

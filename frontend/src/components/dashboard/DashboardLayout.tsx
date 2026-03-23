@@ -17,7 +17,8 @@ import {
     CalendarDays,
     UserCircle,
     BarChart3,
-    Link as LinkIcon
+    Link as LinkIcon,
+    MapPin
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/Breadcrumb";
@@ -45,6 +46,7 @@ const roleNavItems = {
     ],
     admin: [
         { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+        { name: "Campus Venues", href: "/admin/venues", icon: MapPin },
         { name: "User Management", href: "/admin/users", icon: Users },
         { name: "Session Audit", href: "/admin/sessions", icon: History },
         { name: "Platform Settings", href: "/admin/settings", icon: Settings },
@@ -56,6 +58,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     const pathname = usePathname();
     const navItems = roleNavItems[role];
     const { user, logout } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Close sidebar on route change for mobile
     useEffect(() => {
@@ -147,19 +150,26 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                 <div className="p-4 mt-auto">
                     <div className="bg-white/5 rounded-lg p-4 flex flex-col gap-3 border border-white/10">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 text-white font-bold uppercase">
-                                {user?.fullName?.substring(0, 2) || "NA"}
-                            </div>
+                            {user?.profilePicture ? (
+                                <img src={user.profilePicture} alt={user?.fullName || "Avatar"} className="w-10 h-10 rounded-full border border-white/20 object-cover shrink-0" />
+                            ) : (
+                                <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center shrink-0 text-white font-bold uppercase">
+                                    {user?.fullName?.substring(0, 2) || "NA"}
+                                </div>
+                            )}
                             <div className="overflow-hidden">
                                 <p className="text-sm font-medium text-white truncate">{user?.fullName || "User Name"}</p>
                                 <p className="text-xs text-white/60 truncate">ID: {user?.universityId || "N/A"}</p>
                             </div>
                         </div>
                         <button
-                            onClick={() => logout()}
+                            onClick={async () => {
+                                setIsLoggingOut(true);
+                                await logout();
+                            }}
                             className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-slate-300 transition-colors text-sm font-medium mt-1">
                             <LogOut className="w-4 h-4" />
-                            Sign Out
+                            {isLoggingOut ? "Signing Out..." : "Sign Out"}
                         </button>
                     </div>
                 </div>
@@ -193,17 +203,20 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-4 relative">
-                        <div className="sm:hidden font-semibold text-slate-900 absolute left-1/2 -translate-x-1/2 max-w-[130px] sm:max-w-[200px] truncate text-center">
+                    <div className="flex bg-transparent flex-1 justify-center sm:hidden">
+                        <div className="font-semibold text-slate-900 truncate px-2 text-center">
                             {getPageTitle()}
                         </div>
+                    </div>
 
+                    <div className="flex items-center gap-2 sm:gap-4 w-10 sm:w-auto">
+                        {/* Empty right anchor for flex balance */}
                     </div>
                 </header>
 
                 {/* Page Content */}
                 <div className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/50">
-                    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 sm:pb-8">
+                    <div className={cn("p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-20 sm:pb-8 transition-opacity duration-300", isLoggingOut && "opacity-20 pointer-events-none")}>
                         {children}
                     </div>
                 </div>

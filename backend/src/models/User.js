@@ -38,6 +38,7 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         match: [/^[a-zA-Z0-9._%+-]+@(student\.)?babcock\.edu\.ng$/, 'Email must end with @babcock.edu.ng or @student.babcock.edu.ng'],
     },
+    profilePicture: { type: String, default: null },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['Student', 'Lecturer', 'Admin'], required: true },
     universityId: { type: String, required: true, unique: true, trim: true },

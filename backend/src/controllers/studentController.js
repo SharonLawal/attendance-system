@@ -303,6 +303,7 @@ module.exports = {
     getDashboardStats,
     getHistory,
     getCourses,
+    getSchedule,
     getActiveSession,
     getGoogleAuthUrl,
     linkGoogleCallback,

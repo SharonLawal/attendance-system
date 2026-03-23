@@ -11,11 +11,43 @@ const {
     resetPassword,
     linkGoogleEmail,
     unlinkGoogleEmail,
+    uploadAvatar,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { otpLimiter, passwordResetLimiter, loginLimiter } = require('../middleware/rateLimiter');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
+
+const uploadDir = path.join(__dirname, '../../public/uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, 'avatar-' + req.user._id + '-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
+    fileFilter: function (req, file, cb) {
+        const filetypes = /jpeg|jpg|png|webp|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error("Only images (jpeg, jpg, png, webp, gif) are allowed!"));
+    }
+});
 
 router.post('/register', registerUser);
 router.post('/login', loginLimiter, loginUser);
@@ -30,5 +62,7 @@ router.get('/me', protect, getMe);
 // Gmail linking — any authenticated user (student, lecturer, admin)
 router.put('/link-google-email', protect, linkGoogleEmail);
 router.delete('/link-google-email', protect, unlinkGoogleEmail);
+
+router.post('/upload-avatar', protect, upload.single('avatar'), uploadAvatar);
 
 module.exports = router;

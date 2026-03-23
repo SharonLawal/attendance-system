@@ -10,6 +10,7 @@ interface User {
     role: 'Student' | 'Lecturer' | 'Admin';
     universityId: string;
     linkedGoogleEmail: string | null;
+    profilePicture?: string | null;
 }
 
 interface AuthContextType {

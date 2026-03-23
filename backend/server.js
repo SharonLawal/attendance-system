@@ -17,6 +17,7 @@ const lecturerRoutes = require('./src/routes/lecturerRoutes');
 const courseRoutes = require('./src/routes/courseRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
+const classroomRoutes = require('./src/routes/classroomRoutes');
 
 connectDB();
 
@@ -34,16 +35,21 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use('/api', apiLimiter);
 
+// Static Files
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/attendance', attendanceRoutes);
-app.use('/api/lms', lmsRoutes);
 app.use('/api/lms/google', googleLmsRoutes);  // Google Classroom OAuth + sync
+app.use('/api/lms', lmsRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/lecturer', lecturerRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/classrooms', classroomRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 app.get('/', (req, res) => {

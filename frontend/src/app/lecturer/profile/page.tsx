@@ -47,6 +47,26 @@ export default function LecturerProfile() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const res = await apiClient.post("/api/auth/upload-avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (res.data.success) {
+        toast.success("Profile picture updated successfully!");
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to upload image.");
+    }
+  };
+
   return (
     <DashboardLayout role="lecturer">
       <div className="space-y-6">
@@ -68,8 +88,16 @@ export default function LecturerProfile() {
             <Card className="border-slate-200 text-center relative overflow-hidden">
               <div className="h-24 bg-babcock-blue absolute top-0 left-0 right-0 w-full" />
               <CardContent className="pt-12 pb-8 flex flex-col items-center relative z-10">
-                <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center text-4xl font-bold text-babcock-blue font-display shrink-0 mb-4">
-                  {initials}
+                <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center text-4xl font-bold text-babcock-blue font-display shrink-0 mb-4 relative group overflow-hidden cursor-pointer">
+                  {user?.profilePicture ? (
+                    <img src={user.profilePicture} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    initials
+                  )}
+                  <div className="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center transition-all">
+                    <span className="text-white text-[10px] font-semibold uppercase tracking-wider">Upload</span>
+                  </div>
+                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
                 </div>
                 <h2 className="text-xl font-bold font-display text-slate-800">
                   {user?.fullName || "Staff Profile"}

@@ -2,7 +2,6 @@ const { google } = require('googleapis');
 const asyncHandler = require('express-async-handler');
 const Papa = require('papaparse');
 const crypto = require('crypto');
-const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const Course = require('../models/Course');
 const AttendanceRecord = require('../models/AttendanceRecord');
@@ -139,7 +138,7 @@ const getGoogleAssignments = asyncHandler(async (req, res) => {
 // Checks linkedGoogleEmail first, then falls back to primary email
 
 const findUsersByGoogleEmails = async (googleEmails) => {
-    const lower = googleEmails.map((e) => e.toLowerCase());
+    const lower = googleEmails.map((e) => e.trim().toLowerCase());
     return User.find({
         role: 'Student',
         $or: [
@@ -172,7 +171,7 @@ const syncRoster = asyncHandler(async (req, res) => {
 
     const response = await classroom.courses.students.list({ courseId: googleCourseId });
     const students = response.data.students || [];
-    const googleEmails = students.map((s) => s.profile?.emailAddress?.toLowerCase()).filter(Boolean);
+    const googleEmails = students.map((s) => s.profile?.emailAddress?.trim().toLowerCase()).filter(Boolean);
 
     const matchedUsers = await findUsersByGoogleEmails(googleEmails);
     const matchedIds = matchedUsers.map((u) => u._id);
@@ -186,12 +185,13 @@ const syncRoster = asyncHandler(async (req, res) => {
         await updated.save();
     }
 
+    const isFullSuccess = students.length > 0 && matchedIds.length === students.length;
     await SyncHistory.create({
         lecturerId: req.user._id,
         courseId: veriPointCourseId,
         platform: 'Google Classroom',
         studentsSynced: matchedIds.length,
-        status: matchedIds.length > 0 ? 'Success' : 'Partial Success',
+        status: isFullSuccess ? 'Success' : (matchedIds.length > 0 ? 'Partial Success' : 'Failed'),
     });
 
     res.json({
@@ -328,12 +328,13 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
         inserted = Array.isArray(result) ? result.length : records.length;
     }
 
+    const isFullSuccess = submissions.length > 0 && inserted === submissions.length;
     await SyncHistory.create({
         lecturerId: req.user._id,
         courseId: veriPointCourseId,
         platform: 'Google Classroom',
         studentsSynced: inserted,
-        status: inserted > 0 ? 'Success' : 'Partial Success',
+        status: isFullSuccess ? 'Success' : (inserted > 0 ? 'Partial Success' : 'Failed'),
     });
 
     res.json({
@@ -454,12 +455,13 @@ const importMeetCsv = asyncHandler(async (req, res) => {
         inserted = Array.isArray(result) ? result.length : records.length;
     }
 
+    const isFullSuccess = meetEmails.length > 0 && inserted === meetEmails.length;
     await SyncHistory.create({
         lecturerId: req.user._id,
         courseId: veriPointCourseId,
         platform: 'Google Meet',
         studentsSynced: inserted,
-        status: inserted > 0 ? 'Success' : 'Partial Success',
+        status: isFullSuccess ? 'Success' : (inserted > 0 ? 'Partial Success' : 'Failed'),
     });
 
     res.json({

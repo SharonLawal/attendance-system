@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { BookOpen, Users, ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
+import { BookOpen, Users, ArrowRight, ChevronLeft, Loader2, Download, Table, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { DataTable } from "@/components/ui/DataTable";
 import { useLecturerCoursesSummary } from "@/hooks/useLecturerData";
@@ -14,6 +15,7 @@ import apiClient from "@/lib/axios";
 
 export default function LecturerCourses() {
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<"pending" | "roster">("pending");
 
   const { data: courses = [], isLoading } = useLecturerCoursesSummary();
 
@@ -25,9 +27,49 @@ export default function LecturerCourses() {
       const res = await apiClient.get(`/api/courses/${selectedCourse.id}/pending`);
       return res.data.data || [];
     },
-    enabled: !!selectedCourse?.id,
+    enabled: !!selectedCourse?.id && viewMode === "pending",
     staleTime: 30 * 1000,
   });
+
+  // Fetch full roster analytics 
+  const { data: rosterPayload, isLoading: isLoadingRoster } = useQuery({
+    queryKey: ["course", selectedCourse?.id, "roster"],
+    queryFn: async () => {
+      if (!selectedCourse?.id) return { data: [], totalSessions: 0 };
+      const res = await apiClient.get(`/api/courses/${selectedCourse.id}/roster`);
+      return res.data;
+    },
+    enabled: !!selectedCourse?.id && viewMode === "roster",
+    staleTime: 30 * 1000,
+  });
+
+  const downloadCsv = () => {
+    if (!rosterPayload?.data) return;
+    const items = rosterPayload.data;
+    const csvContent = [
+      ["Name", "Matric No", "Email", "Present Count", "Total Sessions", "Score (%)"],
+      ...items.map((r: any) => [
+        `"${r.fullName}"`,
+        r.universityId,
+        r.email,
+        r.presentCount,
+        r.totalSessions,
+        r.score
+      ])
+    ]
+      .map(e => e.join(","))
+      .join("\n");
+      
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${selectedCourse?.code || "course"}_roster.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Roster exported successfully.");
+  };
 
   const studentColumns = [
     {
@@ -59,6 +101,48 @@ export default function LecturerCourses() {
       header: "Email",
       cell: (item: any) => (
         <span className="text-sm text-slate-500">{item.studentId?.email || "—"}</span>
+      ),
+    },
+  ];
+
+  const rosterColumns = [
+    {
+      header: "Student",
+      accessorKey: "fullName",
+      cell: (item: any) => (
+        <div className="flex items-center gap-3">
+            {item.profilePicture ? (
+                <img src={item.profilePicture} alt={item.fullName} className="w-8 h-8 rounded-full object-cover shrink-0" />
+            ) : (
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-xs shrink-0">
+                    {item.fullName?.substring(0, 2).toUpperCase()}
+                </div>
+            )}
+            <span className="font-semibold text-slate-800">{item.fullName}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Matric No",
+      accessorKey: "universityId",
+      cell: (item: any) => (
+        <span className="font-mono text-sm text-slate-500">{item.universityId}</span>
+      ),
+    },
+    {
+      header: "Score",
+      cell: (item: any) => (
+        <Badge variant={item.score >= 75 ? "success" : item.score >= 50 ? "warning" : "danger"}>
+          {item.score}%
+        </Badge>
+      ),
+    },
+    {
+      header: "Metrics",
+      cell: (item: any) => (
+        <span className="text-sm text-slate-500 font-medium whitespace-nowrap">
+          {item.presentCount} / {item.totalSessions} sessions
+        </span>
       ),
     },
   ];
@@ -109,22 +193,90 @@ export default function LecturerCourses() {
                     </p>
                   </div>
                 </div>
+                
+                {/* Mode Selector Tabs */}
+                <div className="flex gap-2 mt-4 pt-4 border-t border-babcock-blue/5">
+                    <Button 
+                      variant={viewMode === "pending" ? "babcock" : "outline"} 
+                      size="sm" 
+                      onClick={() => setViewMode("pending")}
+                      className={viewMode === "pending" ? "bg-babcock-blue shadow-md" : "bg-white text-slate-600"}
+                    >
+                      <Loader2 className={`w-4 h-4 mr-2 ${isLoadingDetails ? 'animate-spin' : ''}`} />
+                      Pending Action
+                    </Button>
+                    <Button 
+                      variant={viewMode === "roster" ? "babcock" : "outline"} 
+                      size="sm" 
+                      onClick={() => setViewMode("roster")}
+                      className={viewMode === "roster" ? "bg-slate-800 shadow-md" : "bg-white text-slate-600"}
+                    >
+                      <Table className="w-4 h-4 mr-2" />
+                      Full Roster Analytics
+                    </Button>
+
+                    {viewMode === "roster" && (
+                        <div className="ml-auto flex items-center gap-2">
+                            <Button 
+                               variant="outline" 
+                               size="sm" 
+                               onClick={() => {
+                                 const lowAttendance = rosterPayload?.data?.filter((r: any) => r.score < 75)?.length || 0;
+                                 if (lowAttendance > 0) {
+                                   toast.success(`Warning email queued for ${lowAttendance} students below the 75% threshold.`);
+                                 } else {
+                                   toast.info("No students currently fall below the 75% threshold.");
+                                 }
+                               }}
+                               className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hidden sm:flex"
+                            >
+                                <AlertTriangle className="w-4 h-4 mr-2" /> Notify Defaulters
+                            </Button>
+                            <Button 
+                               variant="outline" 
+                               size="sm" 
+                               onClick={downloadCsv}
+                               className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                            >
+                                <Download className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Export CSV</span>
+                            </Button>
+                        </div>
+                    )}
+                </div>
               </CardHeader>
               <CardContent className="p-0">
-                {isLoadingDetails ? (
-                  <div className="flex items-center justify-center py-16">
-                    <Loader2 className="w-6 h-6 animate-spin text-babcock-blue" />
-                  </div>
-                ) : !pendingData || pendingData.length === 0 ? (
-                  <div className="py-12 px-6 text-center text-slate-500 text-sm">
-                    No pending check-ins for this course. Students who check in will appear here for approval.
-                  </div>
+                {viewMode === "pending" ? (
+                  isLoadingDetails ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="w-6 h-6 animate-spin text-babcock-blue" />
+                    </div>
+                  ) : !pendingData || pendingData.length === 0 ? (
+                    <div className="py-12 px-6 text-center text-slate-500 text-sm">
+                      No pending check-ins for this course. Students who check in will appear here for approval.
+                    </div>
+                  ) : (
+                    <DataTable
+                      data={pendingData}
+                      columns={studentColumns}
+                      emptyTitle="No pending check-ins."
+                    />
+                  )
                 ) : (
-                  <DataTable
-                    data={pendingData}
-                    columns={studentColumns}
-                    emptyTitle="No pending check-ins."
-                  />
+                  isLoadingRoster ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="w-6 h-6 animate-spin text-slate-800" />
+                    </div>
+                  ) : !rosterPayload?.data || rosterPayload.data.length === 0 ? (
+                    <div className="py-12 px-6 text-center text-slate-500 text-sm">
+                      No students are currently enrolled in this roster.
+                    </div>
+                  ) : (
+                    <DataTable
+                      data={rosterPayload.data}
+                      columns={rosterColumns}
+                      emptyTitle="Roster is empty."
+                    />
+                  )
                 )}
               </CardContent>
             </Card>
@@ -142,7 +294,10 @@ export default function LecturerCourses() {
                   <Card
                     key={course.id}
                     className="group cursor-pointer hover:shadow-md hover:border-babcock-blue/50 transition-all active:scale-[0.98] border-slate-200"
-                    onClick={() => setSelectedCourse(course)}
+                    onClick={() => {
+                        setSelectedCourse(course);
+                        setViewMode("pending");
+                    }}
                   >
                     <CardHeader className="pb-3 border-b border-slate-50 relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-babcock-gold/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700 ease-out" />

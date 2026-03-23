@@ -292,6 +292,51 @@ const importStudents = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Get complete roster with attendance stats
+// @route   GET /api/courses/:id/roster
+// @access  Private (Lecturer only)
+const getCourseRoster = asyncHandler(async (req, res) => {
+    const courseId = req.params.id;
+    const course = await Course.findById(courseId).populate('enrolledStudents', 'fullName universityId email profilePicture linkedGoogleEmail');
+    
+    if (!course || course.lecturerId.toString() !== req.user._id.toString()) {
+        res.status(403);
+        throw new Error('Course not found or unauthorized');
+    }
+
+    const sessions = await AttendanceSession.find({ courseId }).select('_id');
+    const sessionIds = sessions.map(s => s._id);
+
+    const rosterStats = await Promise.all(course.enrolledStudents.map(async (student) => {
+        const presentCount = await AttendanceRecord.countDocuments({
+            studentId: student._id,
+            sessionId: { $in: sessionIds },
+            status: 'Present'
+        });
+        
+        const totalSessions = sessionIds.length;
+        const score = totalSessions === 0 ? 0 : Math.round((presentCount / totalSessions) * 100);
+
+        return {
+            _id: student._id,
+            fullName: student.fullName,
+            universityId: student.universityId,
+            email: student.email,
+            profilePicture: student.profilePicture,
+            linkedGoogleEmail: student.linkedGoogleEmail,
+            presentCount,
+            totalSessions,
+            score
+        };
+    }));
+
+    res.status(200).json({ 
+        success: true, 
+        data: rosterStats, 
+        totalSessions: sessionIds.length 
+    });
+});
+
 // @desc    Get pending check-ins for a course
 // @route   GET /api/courses/:id/pending
 // @access  Private (Lecturer only)
@@ -385,6 +430,7 @@ module.exports = {
     getMyCourses,
     updateCourse,
     importStudents,
+    getCourseRoster,
     getPendingCheckIns,
     resolvePendingCheckIn
 };
