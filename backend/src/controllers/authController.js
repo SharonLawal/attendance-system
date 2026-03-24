@@ -41,15 +41,15 @@ const generateRefreshToken = (user, rememberMe = false) => {
 const setAuthCookies = (res, accessToken, refreshToken, rememberMe = false) => {
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production' || true, // Must be true for sameSite 'none' across Render/Netlify
+        sameSite: 'none',
         maxAge: 15 * 60 * 1000
     });
     const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production' || true,
+        sameSite: 'none',
         maxAge: refreshMaxAge
     });
 };
@@ -226,7 +226,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Public
 const logoutUser = asyncHandler(async (req, res) => {
-    const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' };
+    const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production' || true, sameSite: 'none' };
     res.clearCookie('accessToken', cookieOptions);
     res.clearCookie('refreshToken', cookieOptions);
     res.status(200).json({ success: true, message: 'Logged out successfully' });
@@ -243,7 +243,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     try {
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
         const newAccessToken = generateAccessToken({ _id: decoded.id, role: decoded.role });
-        res.cookie('accessToken', newAccessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 15 * 60 * 1000 });
+        res.cookie('accessToken', newAccessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production' || true, sameSite: 'none', maxAge: 15 * 60 * 1000 });
         res.status(200).json({ success: true, message: 'Token refreshed successfully' });
     } catch (error) {
         res.clearCookie('accessToken');
