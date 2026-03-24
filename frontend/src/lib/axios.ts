@@ -54,7 +54,7 @@ apiClient.interceptors.response.use(
 
         // Refresh failed - redirect to login, but only if we are not already there
         if (typeof window !== 'undefined') {
-          const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
+          const publicPaths = ['/', '/login', '/register', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
           if (!publicPaths.includes(window.location.pathname)) {
             window.location.href = '/login';
           }
