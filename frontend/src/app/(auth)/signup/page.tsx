@@ -17,6 +17,7 @@ import {
   Loader2,
   GraduationCap,
   Building2,
+  ShieldCheck,
 } from "lucide-react";
 import { signupSchema, SignupFormData } from "@/lib/validations/auth";
 import { useAuth } from "@/context/AuthContext";
@@ -101,33 +102,35 @@ export default function SignupPage() {
     <div className="flex h-screen w-full bg-white">
       {/* Left Side */}
       <div className="hidden lg:flex relative w-1/2 h-full bg-[#051025] flex-col justify-between p-16 overflow-hidden">
+        {/* Abstract Background Pattern */}
         <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        <div className="absolute top-0 left-0 -z-10 h-[500px] w-[500px] bg-primary opacity-20 blur-[120px]"></div>
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-primary opacity-20 blur-[100px]"></div>
+        <div className="absolute bottom-0 right-0 -z-10 h-[300px] w-[300px] rounded-full bg-secondary opacity-10 blur-[80px]"></div>
 
-        <div className="absolute top-1/4 right-1/4 animate-bounce duration-[4000ms]">
-          <GraduationCap size={180} className="text-white/5 rotate-12" />
-        </div>
-
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/10">
-            <MapPin size={20} className="text-yellow-400" />
-          </div>
-          <span className="text-xl font-bold text-white tracking-wide">
-            VeriPoint
-          </span>
-        </div>
-
-        <div className="relative z-10">
-          <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
-            Start Your <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200">
-              Journey Here.
+        <div className="relative z-10 flex flex-col gap-28">
+          {/* Top Logo Area */}
+          <div className="relative flex items-center gap-3">
+            <div className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/10">
+              <ShieldCheck size={20} className="text-yellow-400" />
+            </div>
+            <span className="text-xl font-bold text-white tracking-wide">
+              VeriPoint
             </span>
-          </h1>
-          <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-            Create your account to access real-time attendance tracking,
-            analytics, and seamless LMS integration.
-          </p>
+          </div>
+
+          {/* Hero Text */}
+          <div className="relative">
+            <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
+              Start Your <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200">
+                Journey Here.
+              </span>
+            </h1>
+            <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+              Create your account to access real-time attendance tracking,
+              analytics, and seamless LMS integration.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -136,7 +139,7 @@ export default function SignupPage() {
         {/* Mobile Header */}
         <div className="lg:hidden p-6 border-b border-slate-100 flex justify-between items-center bg-white">
           <div className="flex items-center gap-2">
-            <MapPin className="text-primary" size={24} />
+            <ShieldCheck className="text-primary" size={24} />
             <span className="text-xl font-bold tracking-tight text-slate-900">
               VeriPoint
             </span>
