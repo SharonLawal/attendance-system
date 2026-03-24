@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
     Bell,
     Menu,
@@ -18,7 +18,8 @@ import {
     BarChart3,
     Link as LinkIcon,
     MapPin,
-    ShieldCheck
+    ShieldCheck,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/Breadcrumb";
@@ -57,8 +58,18 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const pathname = usePathname();
     const navItems = roleNavItems[role];
-    const { user, logout } = useAuth();
+    const { user, isLoading, logout } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const router = useRouter();
+
+    // Client-side Route Protection
+    useEffect(() => {
+        if (!isLoading && !user) {
+            router.replace('/login');
+        } else if (!isLoading && user && user.role.toLowerCase() !== role) {
+            router.replace('/unauthorized');
+        }
+    }, [user, isLoading, role, router]);
 
     // Close sidebar on route change for mobile
     useEffect(() => {
@@ -83,6 +94,18 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         const lastSegment = segments[segments.length - 1] || "Dashboard";
         return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
     };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <Loader2 className="w-10 h-10 animate-spin text-babcock-blue" />
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null; // Prevents UI flash before the router redirects
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-body relative overflow-hidden">
