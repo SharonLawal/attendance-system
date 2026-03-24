@@ -32,11 +32,8 @@ export const getLiveSession = async (id: string) => {
 
 export const createSession = async (payload: {
   courseId: string;
-  latitude: number;
-  longitude: number;
-  radiusInMeters?: number;
-  durationInMinutes?: number;
-  locationPolygon?: any;
+  classroomId: string;
+  durationInMinutes: number;
 }) => {
   const res = await apiClient.post('/api/sessions/create', payload);
   return res.data;

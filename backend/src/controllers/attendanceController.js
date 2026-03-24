@@ -146,7 +146,18 @@ const markAttendance = asyncHandler(async (req, res) => {
             }
         }
 
-        // 4. Determine Enrollment & Save Record
+        // 4. Check for Duplicate Attendance
+        const existingRecord = await AttendanceRecord.findOne({
+            sessionId: sessionByCode._id,
+            studentId: studentId
+        });
+
+        if (existingRecord) {
+            res.status(400);
+            throw new Error('You have already marked attendance for this session.');
+        }
+
+        // 5. Determine Enrollment & Save Record
         const course = await Course.findById(sessionByCode.courseId);
         // Cast objectids to strings for robust comparison
         const isEnrolled = course && course.enrolledStudents.some(id => id.toString() === studentId.toString());

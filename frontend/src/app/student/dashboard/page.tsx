@@ -281,46 +281,7 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            {/* Today's Schedule */}
-            <Card className="flex-1 border-0 shadow-sm ring-1 ring-slate-200">
-              <CardHeader className="py-4 border-b border-slate-100">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-babcock-blue" />
-                  Today&apos;s Schedule
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-slate-100">
-                  {!data.todaysSchedule || data.todaysSchedule.length === 0 ? (
-                    <div className="p-6 text-center text-slate-500 font-medium text-sm">
-                      No classes scheduled for today.
-                    </div>
-                  ) : (
-                    data.todaysSchedule.map((cls: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="p-4 hover:bg-slate-50 transition-colors flex items-start justify-between cursor-pointer"
-                      >
-                        <div>
-                          <h4 className="font-bold text-slate-800 text-sm">
-                            {cls.courseCode || cls.course?.courseCode}
-                          </h4>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {cls.courseName || cls.course?.courseName}
-                          </p>
-                          <div className="flex items-center gap-3 mt-2">
-                            <Badge variant="neutral">{cls.startTime}</Badge>
-                            <span className="text-xs text-slate-400 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" /> {cls.room}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+
           </div>
         </div>
 

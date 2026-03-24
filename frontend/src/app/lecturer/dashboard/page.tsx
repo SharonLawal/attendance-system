@@ -11,7 +11,6 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { toast } from "sonner";
 import * as lecturerService from "@/services/lecturerService";
-import { generateGeoJSONCircle, getGeolocationErrorMessage } from "@/lib/geo";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { LiveAttendeesTable } from "@/components/lecturer/LiveAttendeesTable";
 import { useLecturerCourses, useLecturerDashboard, useLiveSessionAttendees, useClassrooms } from "@/hooks/useLecturerData";
@@ -89,27 +88,11 @@ export default function LecturerDashboard() {
   const handleCreateSession = async () => {
     if (!selectedCourse || !selectedLocation || parseInt(sessionDuration) < 5) return;
 
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
-    }
-
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject);
-      });
-
-      const loc = classrooms.find((l: any) => l.id === selectedLocation || l._id === selectedLocation);
-      const radius = loc ? (loc.capacity > 100 ? 50 : 25) : 50;
-
-      const polygon = generateGeoJSONCircle([position.coords.longitude, position.coords.latitude], radius);
       const res = await lecturerService.createSession({
         courseId: selectedCourse,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        radiusInMeters: radius,
+        classroomId: selectedLocation,
         durationInMinutes: parseInt(sessionDuration),
-        locationPolygon: polygon
       });
 
       const data = res.data;
@@ -122,9 +105,7 @@ export default function LecturerDashboard() {
       refetchDashboard();
       toast.success("Attendance Session Started successfully!");
     } catch (error: any) {
-      const isGeoError = error && typeof error.code === 'number';
-      const msg = isGeoError ? getGeolocationErrorMessage(error) : (error.response?.data?.message || "Failed to start session.");
-      toast.error(msg);
+      toast.error(error.response?.data?.message || "Failed to start session.");
     }
   };
 
@@ -293,9 +274,9 @@ export default function LecturerDashboard() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="w-full">
           {/* Active Session Control Panel */}
-          <Card className="lg:col-span-1 border-babcock-gold/30 ring-2 ring-babcock-gold/20 shadow-lg shadow-babcock-gold/5 flex flex-col relative overflow-hidden">
+          <Card className="w-full border-babcock-gold/30 ring-2 ring-babcock-gold/20 shadow-lg shadow-babcock-gold/5 flex flex-col relative overflow-hidden">
 
             {/* Pulse ring background */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-babcock-gold/10 rounded-full animate-ping opacity-20 pointer-events-none" />
@@ -333,45 +314,13 @@ export default function LecturerDashboard() {
                 </div>
               )}
 
-              <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="w-full max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button variant="outline" className="w-full gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold" onClick={handleExtendSession}>
                   <Clock className="w-4 h-4" /> +5 Mins
                 </Button>
                 <Button variant="danger" className="w-full gap-2 font-semibold shadow-md shadow-red-500/20" onClick={handleEndSession}>
                   <Square className="w-4 h-4 fill-current" /> End Now
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Map Column */}
-          <Card className="lg:col-span-2 border-slate-200">
-            <CardHeader className="flex flex-row justify-between items-center border-b border-slate-100 pb-4">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-900">
-                  <MapIcon className="w-5 h-5 text-babcock-blue" />
-                  Classroom Geofence
-                </CardTitle>
-                <CardDescription className="sm:ml-7 text-sm">Location restriction boundary.</CardDescription>
-              </div>
-              <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm mt-3 sm:mt-0 self-start sm:self-center">Boundary Enforced</Badge>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="w-full h-[350px] bg-[#e5e3df] relative overflow-hidden flex flex-col items-center justify-center">
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-
-                {/* Targeted Polygon visually derived from the selected location */}
-                <div className="w-72 h-56 bg-babcock-blue/20 border-2 border-babcock-blue border-dashed transform rotate-[-5deg] flex flex-col items-center justify-center shadow-lg relative z-10 backdrop-blur-[2px] transition-all">
-                  <MapIcon className="w-8 h-8 text-babcock-blue mb-2" />
-                  <span className="text-babcock-blue font-bold px-3 py-1 bg-white/90 rounded-full text-sm shadow-sm">
-                    {classrooms.find((l: any) => l.id === selectedLocation || l._id === selectedLocation)?.name || "Babcock Business School"}
-                  </span>
-                </div>
-
-                <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur rounded-lg p-3 shadow-sm border border-slate-200 flex items-start gap-3 flex-row z-20">
-                  <ShieldAlert className="w-5 h-5 text-babcock-blue mt-0.5 shrink-0" />
-                  <p className="text-xs text-slate-600 font-medium">Students must have physical GPS coordinates averaging within this highlighted polygon zone to fulfill the verification mandate.</p>
-                </div>
               </div>
             </CardContent>
           </Card>

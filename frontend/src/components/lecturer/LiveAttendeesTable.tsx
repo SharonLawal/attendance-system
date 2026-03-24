@@ -133,9 +133,7 @@ export const LiveAttendeesTable: React.FC<LiveAttendeesTableProps> = ({
               <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900">
                 Check-in Time
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900">
-                Location
-              </th>
+
               <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900">
                 Actions
               </th>
@@ -144,7 +142,7 @@ export const LiveAttendeesTable: React.FC<LiveAttendeesTableProps> = ({
           <tbody className="divide-y divide-neutral-100">
             {filteredAttendees.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-neutral-500">
+                <td colSpan={4} className="px-6 py-12 text-center text-neutral-500">
                   No attendees in this category
                 </td>
               </tr>
@@ -193,26 +191,7 @@ export const LiveAttendeesTable: React.FC<LiveAttendeesTableProps> = ({
                       {new Date(attendee.checkedInAt).toLocaleTimeString()}
                     </p>
                   </td>
-                  <td className="px-6 py-4">
-                    {attendee.distanceFromSession !== null ? (
-                      <div className="flex items-center gap-1 text-sm">
-                        <MapPin size={14} className={
-                          attendee.distanceFromSession <= 50 
-                            ? 'text-emerald-600' 
-                            : 'text-amber-600'
-                        } />
-                        <span className={
-                          attendee.distanceFromSession <= 50 
-                            ? 'text-emerald-600' 
-                            : 'text-amber-600'
-                        }>
-                          {attendee.distanceFromSession}m away
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-neutral-400">No location</span>
-                    )}
-                  </td>
+
                   <td className="px-6 py-4">
                     {attendee.status === 'Pending' && (
                       <div className="flex gap-2">

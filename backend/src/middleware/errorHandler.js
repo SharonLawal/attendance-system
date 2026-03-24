@@ -13,9 +13,10 @@ const errorHandler = (err, req, res, next) => {
 
     // Handle Zod Validation Errors
     if (err.name === 'ZodError') {
+        const validationIssues = err.errors || err.issues || [];
         return res.status(400).json({
             message: 'Validation Error',
-            errors: err.errors.map(e => ({ path: e.path, message: e.message })),
+            errors: validationIssues.map(e => ({ path: e.path, message: e.message })),
         });
     }
 

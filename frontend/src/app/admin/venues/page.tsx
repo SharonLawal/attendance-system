@@ -181,6 +181,12 @@ export default function AdminVenueManager() {
             return;
         }
 
+        const uniqueCoords = new Set(coordinates.map(c => `${c.lat.toFixed(7)},${c.lng.toFixed(7)}`));
+        if (uniqueCoords.size < 3) {
+            toast.error("You captured multiple coordinates in the exact same spot! Please click 'Auto 15m Box' to automatically generate a valid boundary.");
+            return;
+        }
+
         const geoJsonCoordinates = coordinates.map(coord => [coord.lng, coord.lat]);
         geoJsonCoordinates.push([...geoJsonCoordinates[0]]);
 

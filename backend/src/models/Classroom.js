@@ -32,4 +32,7 @@ const classroomSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+// Strictly enforce geospatial indexing to prevent topology collisions
+classroomSchema.index({ locationPolygon: '2dsphere' });
+
 module.exports = mongoose.model('Classroom', classroomSchema);
