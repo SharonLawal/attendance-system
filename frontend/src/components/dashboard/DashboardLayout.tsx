@@ -14,11 +14,11 @@ import {
     Users,
     AlertTriangle,
     BookOpen,
-    CalendarDays,
     UserCircle,
     BarChart3,
     Link as LinkIcon,
-    MapPin
+    MapPin,
+    ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/Breadcrumb";
@@ -106,9 +106,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
             >
                 <div className="flex items-center justify-between px-6 pt-8 pb-4">
                     <div className="font-display font-bold text-2xl tracking-tight text-white flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-lg bg-babcock-gold flex items-center justify-center text-babcock-blue text-lg font-black shrink-0">
-                            V
-                        </span>
+                        <ShieldCheck className="w-8 h-8 text-babcock-gold shrink-0" strokeWidth={2.5} />
                         <span>VeriPoint</span>
                     </div>
                     <button
