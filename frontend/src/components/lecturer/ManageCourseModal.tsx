@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/lecturer/ManageCourseModal.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -19,12 +24,10 @@ export function ManageCourseModal({ isOpen, onClose, course, onSuccess }: Manage
     const [activeTab, setActiveTab] = useState<"import" | "pending">("import");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Import State
     const [rosterInput, setRosterInput] = useState("");
     const [ghostStudents, setGhostStudents] = useState<string[]>([]);
     const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null);
 
-    // Pending State
     const [pendingRecords, setPendingRecords] = useState<any[]>([]);
     const [isLoadingPending, setIsLoadingPending] = useState(false);
 
@@ -54,7 +57,6 @@ export function ManageCourseModal({ isOpen, onClose, course, onSuccess }: Manage
     const handleImportRoster = async () => {
         if (!rosterInput.trim()) return;
 
-        // Parse CSV/Newline separated inputs
         const identifiers = rosterInput
             .split(/[\n,]+/)
             .map(s => s.trim())
@@ -75,7 +77,7 @@ export function ManageCourseModal({ isOpen, onClose, course, onSuccess }: Manage
             setGhostStudents(res.data.ghostStudents || []);
             setRosterInput("");
             toast.success(`${res.data.addedCount} students registered successfully.`);
-            onSuccess(); // Refresh dashboard counts
+            onSuccess();
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Failed to import roster.");
         } finally {
@@ -93,7 +95,7 @@ export function ManageCourseModal({ isOpen, onClose, course, onSuccess }: Manage
             toast.success(`Check-in ${action.toLowerCase()}d.`);
             setPendingRecords(prev => prev.filter(r => r._id !== recordId));
             if (action === "Approve") {
-                onSuccess(); // Refresh course roster counts
+                onSuccess();
             }
         } catch (error: any) {
             toast.error(error.response?.data?.message || `Failed to ${action.toLowerCase()} record.`);

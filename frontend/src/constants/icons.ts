@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/constants/icons.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { 
   User, 
   MapPin, 

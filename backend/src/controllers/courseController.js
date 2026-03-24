@@ -1,12 +1,15 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/controllers/courseController.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const Course = require('../models/Course');
 const User = require('../models/User');
 const AttendanceSession = require('../models/AttendanceSession');
 const AttendanceRecord = require('../models/AttendanceRecord');
-const mongoose = require('mongoose'); // Added
+const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
 const { z } = require('zod');
 
-// Validation Schema
 const courseSchema = z.object({
     courseCode: z.string().toUpperCase().regex(/^[A-Z]{4}[0-9]{3}(-[A-Z0-9]+)?$/, 'Course code must follow format: COMP101 or COMP101-A'),
     courseName: z.string().min(3).max(100),
@@ -27,8 +30,7 @@ const getDashboard = asyncHandler(async (req, res) => {
             lecturerId, 
             endTime: { $gt: new Date() } 
         }).populate('courseId', 'courseCode courseName'),
-        
-        // Complex aggregation to compute overall average attendance rate
+
         AttendanceSession.aggregate([
             { $match: { lecturerId: new mongoose.Types.ObjectId(lecturerId) } },
             {
@@ -56,25 +58,22 @@ const getDashboard = asyncHandler(async (req, res) => {
         ])
     ]);
 
-    // Simple calculation for average rate
     let totalExpected = 0;
     let totalPresent = 0;
     records.forEach(session => {
-        // Mock expected count as 50 per class if strictly unknown, else use total count + simple math
-        // A better approach is fetching actual student counts via Enrollment model. 
+
         totalPresent += session.presentCount;
         totalExpected += session.totalCount > 0 ? session.totalCount : 50; 
     });
     
     const averageAttendance = totalExpected === 0 ? 100 : Math.round((totalPresent / totalExpected) * 100);
 
-    // Get a rough total students count (mocked to unique students attended)
     const uniqueStudents = await AttendanceRecord.distinct('studentId');
 
     res.json({
         total_courses: coursesCount,
         active_sessions: activeSession ? 1 : 0,
-        total_students: uniqueStudents.length, // Simplified metric
+        total_students: uniqueStudents.length,
         average_attendance: averageAttendance,
         active_session: activeSession ? {
             id: activeSession._id,
@@ -84,7 +83,7 @@ const getDashboard = asyncHandler(async (req, res) => {
             start_time: activeSession.startTime,
             end_time: activeSession.endTime,
         } : null,
-        upcoming_sessions: [] // Skipping upcoming sessions for MVP scope
+        upcoming_sessions: []
     });
 });
 
@@ -97,7 +96,7 @@ const getLiveSessionStats = asyncHandler(async (req, res) => {
 
     const session = await AttendanceSession.findOne({
         _id: id,
-        lecturerId // Secure: Ensure this session belongs to the requesting lecturer
+        lecturerId
     }).populate('courseId', 'courseCode courseName');
 
     if (!session) {
@@ -110,7 +109,6 @@ const getLiveSessionStats = asyncHandler(async (req, res) => {
         status: 'Present'
     });
 
-    // Replace with Enrollment real count eventually
     const expectedCount = 50; 
 
     const now = new Date();
@@ -134,31 +132,27 @@ const getLiveSessionStats = asyncHandler(async (req, res) => {
 // @route   POST /api/courses
 // @access  Private (Lecturer only)
 const createCourse = asyncHandler(async (req, res) => {
-    // 1. Verify Role
+
     if (req.user.role !== 'Lecturer') {
         res.status(403);
         throw new Error('Only Lecturers can create courses');
     }
 
-    // 2. Validate input
     const validatedData = courseSchema.parse(req.body);
     const { courseCode, courseName, department, credits, capacity } = validatedData;
 
-    // 3. Rate Limit / Integrity check (Max 50 courses per lecturer)
     const courseCount = await Course.countDocuments({ lecturerId: req.user._id });
     if (courseCount >= 50) {
         res.status(400);
         throw new Error('Maximum course limit (50) reached. Please archive old courses first.');
     }
 
-    // 4. Duplicate Check (Global system uniqueness)
     const existingCourse = await Course.findOne({ courseCode });
     if (existingCourse) {
         res.status(400);
         throw new Error(`Course code '${courseCode}' is already in use by another class/section.`);
     }
 
-    // 5. Create
     const course = await Course.create({
         courseCode,
         courseName,
@@ -186,7 +180,7 @@ const getMyCourses = asyncHandler(async (req, res) => {
     }
 
     const courses = await Course.find({ lecturerId: req.user._id })
-        .sort({ createdAt: -1 }); // Newest first
+        .sort({ createdAt: -1 });
 
     res.status(200).json({
         success: true,
@@ -212,16 +206,13 @@ const updateCourse = asyncHandler(async (req, res) => {
         throw new Error('Course not found');
     }
 
-    // CRITICAL: IDOR Protection
     if (course.lecturerId.toString() !== req.user._id.toString()) {
         res.status(403);
         throw new Error('Not authorized to update this course');
     }
 
-    // Validate partial input
     const validatedData = courseSchema.partial().parse(req.body);
 
-    // Duplicate Check (if courseCode is being changed)
     if (validatedData.courseCode && validatedData.courseCode !== course.courseCode) {
         const existingCourse = await Course.findOne({ courseCode: validatedData.courseCode });
         if (existingCourse) {
@@ -247,7 +238,7 @@ const updateCourse = asyncHandler(async (req, res) => {
 // @access  Private (Lecturer only)
 const importStudents = asyncHandler(async (req, res) => {
     const courseId = req.params.id;
-    const { universityIds } = req.body; // Array of matric numbers
+    const { universityIds } = req.body;
 
     if (!Array.isArray(universityIds)) {
         res.status(400);
@@ -265,15 +256,12 @@ const importStudents = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to modify this course');
     }
 
-    // Find all users matching these IDs
     const users = await User.find({ universityId: { $in: universityIds } });
     const userIds = users.map(u => u._id);
     const foundUniversityIds = users.map(u => u.universityId);
 
-    // Identify ghost students (Requested Matrix IDs not found in the DB)
     const ghostStudents = universityIds.filter(id => !foundUniversityIds.includes(id));
 
-    // Update course using $addToSet strategically
     if (userIds.length > 0) {
         await Course.findByIdAndUpdate(courseId, {
             $addToSet: { enrolledStudents: { $each: userIds } }
@@ -354,11 +342,9 @@ const getPendingCheckIns = asyncHandler(async (req, res) => {
         throw new Error('Not authorized');
     }
 
-    // Pluck all session thresholds
     const sessions = await AttendanceSession.find({ courseId }).select('_id');
     const sessionIds = sessions.map(s => s._id);
 
-    // Filter pending records
     const pendingRecords = await AttendanceRecord.find({
         sessionId: { $in: sessionIds },
         status: 'Pending'

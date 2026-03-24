@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/lecturer/EditCourseModal.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,7 +15,6 @@ import { BookOpen, Hash, Users, Activity, FileText, Save } from "lucide-react";
 import { toast } from "sonner";
 import apiClient from "@/lib/axios";
 
-// Schema matching the backend's rigorous Course.js validation (partial optionality on the backend allows full payload here)
 const editCourseSchema = z.object({
     courseCode: z.string()
         .toUpperCase()
@@ -29,7 +33,7 @@ interface EditCourseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    course: any; // The course object being edited
+    course: any;
 }
 
 export function EditCourseModal({ isOpen, onClose, onSuccess, course }: EditCourseModalProps) {
@@ -52,7 +56,6 @@ export function EditCourseModal({ isOpen, onClose, onSuccess, course }: EditCour
         },
     });
 
-    // Sync form with selected course
     useEffect(() => {
         if (course) {
             reset({

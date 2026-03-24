@@ -1,3 +1,7 @@
+/**
+ * @module app/student/dashboard
+ * @description The primary Student Dashboard interface. Integrates native browser geolocation capturing with One-Time Code (OTC) inputs to transmit structured presence payloads to the verification engine.
+ */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -33,7 +37,6 @@ export default function StudentDashboard() {
     setErrorMessage("");
   };
 
-  // Poll for active session every 5 seconds
   useEffect(() => {
     let mounted = true;
     let timer: any = null;
@@ -48,7 +51,7 @@ export default function StudentDashboard() {
           setActiveSession(null);
         }
       } catch (err) {
-        // ignore polling errors
+
       } finally {
         timer = setTimeout(poll, 5000);
       }
@@ -280,7 +283,6 @@ export default function StudentDashboard() {
                 </div>
               </div>
             </div>
-
 
           </div>
         </div>

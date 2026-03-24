@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/(auth)/forgot-password/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import { useState } from "react";
 import Link from "next/link";
 import { Mail, ArrowLeft, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";

@@ -1,3 +1,7 @@
+/**
+ * @module models/Course
+ * @description Mongoose schema for academic courses. Links lecturers to their enrolled student rosters and tracks overall capacity constraints.
+ */
 const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema({
@@ -61,8 +65,6 @@ const courseSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-// Define indexes for fast querying
-// courseCode is globally unique via schema property.
 courseSchema.index({ lecturerId: 1 });
 courseSchema.index({ status: 1 });
 courseSchema.index({ lecturerId: 1, status: 1 });

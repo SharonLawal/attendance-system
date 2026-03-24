@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/SearchBar.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React, { InputHTMLAttributes } from 'react';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';

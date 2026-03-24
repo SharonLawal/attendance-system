@@ -1,3 +1,7 @@
+/**
+ * @module services/lecturerService
+ * @description Client-side API binding utility for the Lecturer dashboard operations. Handles live active session lifecycle mutations and roster synchronization calls.
+ */
 import apiClient from '@/lib/axios';
 
 export const getCoursesSummary = async () => {
@@ -64,8 +68,6 @@ export const rejectAttendance = async (recordId: string, reason?: string) => {
   return res.data;
 };
 
-// ─── Google Classroom ─────────────────────────────────────────────────────────
-
 export const getGoogleConnectionStatus = async () => {
   const res = await apiClient.get('/api/lms/google/status');
   return res.data;
@@ -114,11 +116,6 @@ export const syncGoogleAttendance = async (
   });
   return res.data;
 };
-
-// ─── CSV Import ──────────────────────────────────────────────────────────────
-//
-// Works with Google Meet and Microsoft Teams attendance export CSVs.
-// The backend auto-detects the platform from the CSV column headers.
 
 export const importCsvAttendance = async (
   file: File,

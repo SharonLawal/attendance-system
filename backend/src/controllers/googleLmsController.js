@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/controllers/googleLmsController.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const { google } = require('googleapis');
 const asyncHandler = require('express-async-handler');
 const Papa = require('papaparse');
@@ -8,8 +12,6 @@ const AttendanceRecord = require('../models/AttendanceRecord');
 const AttendanceSession = require('../models/AttendanceSession');
 const SyncHistory = require('../models/SyncHistory');
 
-// ─── OAuth Client Factory ────────────────────────────────────────────────────
-
 const getOAuthClient = (tokens = null) => {
     const client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
@@ -19,8 +21,6 @@ const getOAuthClient = (tokens = null) => {
     if (tokens) client.setCredentials(tokens);
     return client;
 };
-
-// ─── Get Auth URL ────────────────────────────────────────────────────────────
 
 const getAuthUrl = asyncHandler(async (req, res) => {
     const oauth2Client = getOAuthClient();
@@ -37,8 +37,6 @@ const getAuthUrl = asyncHandler(async (req, res) => {
     });
     res.json({ url });
 });
-
-// ─── OAuth Callback ──────────────────────────────────────────────────────────
 
 const handleCallback = asyncHandler(async (req, res) => {
     const { code, state: userId, error } = req.query;
@@ -68,8 +66,6 @@ const handleCallback = asyncHandler(async (req, res) => {
     }
 });
 
-// ─── Connection Status ───────────────────────────────────────────────────────
-
 const getConnectionStatus = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('googleTokens');
     res.json({
@@ -78,14 +74,10 @@ const getConnectionStatus = asyncHandler(async (req, res) => {
     });
 });
 
-// ─── Disconnect ──────────────────────────────────────────────────────────────
-
 const disconnectGoogle = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { $unset: { googleTokens: 1 } });
     res.json({ success: true, message: 'Google account disconnected' });
 });
-
-// ─── List Google Classroom Courses ──────────────────────────────────────────
 
 const getGoogleCourses = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('googleTokens');
@@ -104,8 +96,6 @@ const getGoogleCourses = asyncHandler(async (req, res) => {
     }));
     res.json({ courses });
 });
-
-// ─── List Google Classroom Assignments ──────────────────────────────────────
 
 const getGoogleAssignments = asyncHandler(async (req, res) => {
     const { googleCourseId } = req.query;
@@ -134,9 +124,6 @@ const getGoogleAssignments = asyncHandler(async (req, res) => {
     res.json({ assignments });
 });
 
-// ─── Helper: find VeriPoint users from a list of Google emails ───────────────
-// Checks linkedGoogleEmail first, then falls back to primary email
-
 const findUsersByGoogleEmails = async (googleEmails) => {
     const lower = googleEmails.map((e) => e.trim().toLowerCase());
     return User.find({
@@ -147,9 +134,6 @@ const findUsersByGoogleEmails = async (googleEmails) => {
         ],
     }).select('_id email linkedGoogleEmail');
 };
-
-// ─── Sync Roster ─────────────────────────────────────────────────────────────
-// Imports all enrolled students from a Google Classroom course into a VeriPoint course
 
 const syncRoster = asyncHandler(async (req, res) => {
     const { googleCourseId, veriPointCourseId } = req.body;
@@ -203,21 +187,6 @@ const syncRoster = asyncHandler(async (req, res) => {
     });
 });
 
-// ─── Sync Latest Attendance ───────────────────────────────────────────────────
-//
-// This is the ONE-CLICK sync the lecturer uses after an online class.
-//
-// Workflow:
-//   1. Lecturer runs an online class (Google Meet)
-//   2. During class, students submit the latest Google Classroom assignment
-//      (lecturer shares the link in the Meet chat — students just click Submit)
-//   3. After class, lecturer clicks "Sync Attendance" in VeriPoint
-//   4. This endpoint automatically finds the MOST RECENT assignment,
-//      pulls all submissions, matches students by linkedGoogleEmail,
-//      and marks them Present in VeriPoint
-//
-// No manual assignment selection needed.
-
 const syncLatestAttendance = asyncHandler(async (req, res) => {
     const { googleCourseId, veriPointCourseId, assignmentId } = req.body;
 
@@ -237,7 +206,6 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
     const oauth2Client = getOAuthClient(decryptedTokens);
     const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
 
-    // Step 1: Get the specific assignment by ID
     const cwResponse = await classroom.courses.courseWork.get({
         courseId: googleCourseId,
         id: assignmentId,
@@ -249,7 +217,6 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
         throw new Error('Assignment not found in Google Classroom.');
     }
 
-    // Step 2: Get all submissions that were turned in for that assignment
     const submissionsResponse = await classroom.courses.courseWork.studentSubmissions.list({
         courseId: googleCourseId,
         courseWorkId: targetAssignment.id,
@@ -269,7 +236,6 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
         return;
     }
 
-    // Step 3: Fetch the Google email for each submitting student
     const submitterEmails = [];
     for (const submission of submissions) {
         try {
@@ -278,11 +244,10 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
                 submitterEmails.push(profile.data.emailAddress.toLowerCase());
             }
         } catch {
-            // Skip profiles we can't fetch
+
         }
     }
 
-    // Step 5: Match to VeriPoint users via linkedGoogleEmail
     const matchedUsers = await findUsersByGoogleEmails(submitterEmails);
 
     const unmatchedEmails = [];
@@ -292,7 +257,6 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
         }
     }
 
-    // Step 6: Create or retrieve a background LMS session
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let session = await AttendanceSession.findOne({
@@ -313,7 +277,6 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
         });
     }
 
-    // Step 7: Bulk insert attendance records, ignore duplicates
     const records = matchedUsers.map((u) => ({
         sessionId: session._id,
         studentId: u._id,
@@ -348,19 +311,6 @@ const syncLatestAttendance = asyncHandler(async (req, res) => {
     });
 });
 
-// ─── Import Meet Attendance CSV ───────────────────────────────────────────────
-//
-// Accepts a CSV exported from the "Google Meet Attendance List" Chrome extension
-// (meetlist.io). The extension produces a CSV with at minimum these columns:
-//   Name, Email, First Seen At, Duration
-//
-// This endpoint:
-//   1. Parses the uploaded CSV buffer (no temp files written to disk)
-//   2. Extracts all email addresses from the file
-//   3. Matches them against VeriPoint users via linkedGoogleEmail or primary email
-//   4. Creates an AttendanceSession + AttendanceRecord entries (Present) for matches
-//   5. Returns a summary with matched / unmatched counts
-
 const importMeetCsv = asyncHandler(async (req, res) => {
     const { veriPointCourseId } = req.body;
 
@@ -374,7 +324,6 @@ const importMeetCsv = asyncHandler(async (req, res) => {
     const course = await Course.findOne({ _id: veriPointCourseId, lecturerId: req.user._id });
     if (!course) { res.status(404); throw new Error('VeriPoint course not found or unauthorized'); }
 
-    // ── Parse CSV in-memory with PapaParse ──────────────────────────────────
     const csvText = req.file.buffer.toString('utf8');
     const parsed = Papa.parse(csvText, {
         header: true,
@@ -397,7 +346,6 @@ const importMeetCsv = asyncHandler(async (req, res) => {
         res.status(400); throw new Error('CSV must contain an "Email" column. Ensure you are uploading a valid CSV.');
     }
 
-    // Extract unique participant emails from data rows
     const meetEmails = [];
     for (const row of parsed.data) {
         const email = row[emailColKey]?.toLowerCase().trim();
@@ -410,7 +358,6 @@ const importMeetCsv = asyncHandler(async (req, res) => {
         res.status(400); throw new Error('No valid email addresses found in the CSV file');
     }
 
-    // ── Match emails to VeriPoint students ───────────────────────────────────
     const matchedUsers = await findUsersByGoogleEmails(meetEmails);
 
     const unmatchedEmails = [];
@@ -420,7 +367,6 @@ const importMeetCsv = asyncHandler(async (req, res) => {
         }
     }
 
-    // ── Create or retrieve attendance session ────────────────────────────────
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let session = await AttendanceSession.findOne({

@@ -1,10 +1,13 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/routes/courseRoutes.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const express = require('express');
 const { createCourse, getMyCourses, updateCourse, importStudents, getCourseRoster, getPendingCheckIns, resolvePendingCheckIn } = require('../controllers/courseController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Apply auth protection to all course routes
 router.use(protect);
 
 router.post('/', createCourse);

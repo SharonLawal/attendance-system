@@ -1,8 +1,12 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/middleware/authMiddleware.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const protect = async (req, res, next) => {
-    // Read token from httpOnly cookie (not Authorization header)
+
     const token = req.cookies.accessToken;
 
     if (!token) {
@@ -11,7 +15,7 @@ const protect = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // Attach user data to request
+
         req.user = await User.findById(decoded.id).select('-passwordHash');
 
         if (!req.user) {

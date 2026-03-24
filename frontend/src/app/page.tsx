@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { Navbar } from "@/components/landing/Navbar";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";

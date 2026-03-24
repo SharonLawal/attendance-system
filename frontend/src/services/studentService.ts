@@ -1,3 +1,7 @@
+/**
+ * @module services/studentService
+ * @description Client-side API binding utility for Student telemetry. Responsible for transmitting geofenced OTP attendance payloads to the verification engine.
+ */
 import apiClient from '@/lib/axios';
 
 export const getDashboard = async () => {
@@ -5,7 +9,9 @@ export const getDashboard = async () => {
   return res.data;
 };
 
-// Legacy - kept for compatibility but dashboard now uses getDashboard
+/**
+ * @deprecated Legacy stats endpoint. Dashboard directly relies on getDashboard payload.
+ */
 export const getDashboardStats = async () => {
   const res = await apiClient.get('/api/student/stats');
   return res.data;

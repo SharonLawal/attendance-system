@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/OTPInput.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React, { useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -17,11 +21,11 @@ export function OTPInput({ length = 6, value, onChange, disabled }: OTPInputProp
             const chars = value.split("");
 
             if (chars[index]) {
-                // Delete current char
+
                 chars[index] = "";
                 onChange(chars.join(""));
             } else if (index > 0) {
-                // Move back and delete
+
                 chars[index - 1] = "";
                 onChange(chars.join(""));
                 inputsRef.current[index - 1]?.focus();
@@ -34,11 +38,10 @@ export function OTPInput({ length = 6, value, onChange, disabled }: OTPInputProp
     };
 
     const handleInput = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-        // Only accept alphanumeric upper case
+
         let char = e.target.value.toUpperCase();
         char = char.replace(/[^A-Z0-9]/g, "");
 
-        // We only take the last character typed in case multiple were passed somehow not via paste
         if (char.length > 1) {
             char = char[char.length - 1];
         }
@@ -46,7 +49,7 @@ export function OTPInput({ length = 6, value, onChange, disabled }: OTPInputProp
         if (!char && e.target.value !== "") return;
 
         const chars = value.split("").slice(0, length);
-        // Pad array if needed
+
         while (chars.length < length) chars.push("");
 
         chars[index] = char;
@@ -67,7 +70,6 @@ export function OTPInput({ length = 6, value, onChange, disabled }: OTPInputProp
         const chars = value.split("").slice(0, length);
         while (chars.length < length) chars.push("");
 
-        // Find the first empty slot or start from 0
         let startIndex = chars.findIndex(c => !c);
         if (startIndex === -1) startIndex = 0;
 
@@ -79,7 +81,6 @@ export function OTPInput({ length = 6, value, onChange, disabled }: OTPInputProp
 
         onChange(chars.join(""));
 
-        // Focus the next empty input or the last one
         const nextIndex = Math.min(startIndex + pastedData.length, length - 1);
         inputsRef.current[nextIndex]?.focus();
     };

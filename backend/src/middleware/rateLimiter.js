@@ -1,9 +1,12 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/middleware/rateLimiter.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const rateLimit = require('express-rate-limit');
 
-// Rate limiter for OTP requests (Registration and Resend)
 const otpLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 3, // Max 3 OTP requests per window per IP
+    windowMs: 15 * 60 * 1000,
+    max: 3,
     message: {
         success: false,
         message: 'Too many verification attempts. Please try again in 15 minutes.'
@@ -12,10 +15,9 @@ const otpLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Rate limiter for Password Reset requests
 const passwordResetLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // Max 3 password reset requests per hour per IP
+    windowMs: 60 * 60 * 1000,
+    max: 3,
     message: {
         success: false,
         message: 'Too many password reset attempts. Please try again later.'
@@ -24,10 +26,9 @@ const passwordResetLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Login limiter to prevent brute-force attempts
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // max 10 login attempts per IP per window
+    windowMs: 15 * 60 * 1000,
+    max: 10,
     message: {
         success: false,
         message: 'Too many login attempts. Please try again in 15 minutes.'
@@ -36,10 +37,9 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Generic API limiter to protect the API from abuse (adjust limits as needed)
 const apiLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 200, // max 200 requests per IP per minute
+    windowMs: 60 * 1000,
+    max: 200,
     message: {
         success: false,
         message: 'Too many requests from this IP, please slow down.'
@@ -48,10 +48,9 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Attendance limiter to prevent spamming mark requests
 const attendanceLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 30, // max 30 mark attendance attempts per IP per minute
+    windowMs: 60 * 1000,
+    max: 30,
     message: {
         success: false,
         message: 'Too many attendance marking attempts. Please wait a moment before retrying.'

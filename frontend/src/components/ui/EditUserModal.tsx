@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/EditUserModal.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Modal } from './Modal';

@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/admin/sessions/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { History, Radio, Clock } from "lucide-react";
@@ -14,7 +19,6 @@ import apiClient from "@/lib/axios";
 export default function AdminSessions() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch active sessions from the system stats (sessions are tracked per course)
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin", "session-stats"],
     queryFn: async () => {

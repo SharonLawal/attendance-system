@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/student/profile/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Mail, KeyRound, Shield, HelpCircle, LogOut, Link2, Unlink } from "lucide-react";
@@ -11,8 +16,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
 import { toast } from "sonner";
-
-// ─── Google Email Link Card ──────────────────────────────────────────────────
 
 function GoogleEmailCard() {
   const { user, refetchUser } = useAuth();
@@ -137,8 +140,6 @@ function GoogleEmailCard() {
     </div>
   );
 }
-
-// ─── Main Profile Page ───────────────────────────────────────────────────────
 
 export default function StudentProfile() {
   const { user, logout } = useAuth();

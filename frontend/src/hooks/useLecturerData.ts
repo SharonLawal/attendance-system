@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/hooks/useLecturerData.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/axios';
 import * as lecturerService from '@/services/lecturerService';
@@ -17,9 +21,6 @@ export function useLecturerDashboard() {
   });
 }
 
-// ============================================
-// Live Session Attendees
-// ============================================
 export function useLiveSessionAttendees(sessionId: string | null) {
   return useQuery({
     queryKey: ['lecturer', 'session', sessionId, 'attendees'],
@@ -29,14 +30,11 @@ export function useLiveSessionAttendees(sessionId: string | null) {
       return response.data;
     },
     enabled: !!sessionId,
-    refetchInterval: 5000, // Poll every 5 seconds
-    staleTime: 0, // Always consider stale for real-time updates
+    refetchInterval: 5000,
+    staleTime: 0,
   });
 }
 
-// ============================================
-// Classrooms
-// ============================================
 export function useClassrooms() {
   return useQuery({
     queryKey: ['lecturer', 'classrooms'],
@@ -44,13 +42,10 @@ export function useClassrooms() {
       const response = await lecturerService.getClassrooms();
       return response;
     },
-    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    staleTime: 10 * 60 * 1000,
   });
 }
 
-// ============================================
-// Approve Pending Attendance
-// ============================================
 export function useApprovePendingAttendance() {
   const queryClient = useQueryClient();
 
@@ -60,13 +55,11 @@ export function useApprovePendingAttendance() {
       return response;
     },
     onMutate: async (recordId) => {
-      // Cancel ongoing queries
+
       await queryClient.cancelQueries({ queryKey: ['lecturer', 'session'] });
 
-      // Snapshot previous value
       const previousData = queryClient.getQueryData(['lecturer', 'session']);
 
-      // Optimistically update
       queryClient.setQueryData(['lecturer', 'session'], (old: any) => {
         if (!old) return old;
         
@@ -89,7 +82,7 @@ export function useApprovePendingAttendance() {
       return { previousData };
     },
     onError: (err, recordId, context) => {
-      // Revert on error
+
       queryClient.setQueryData(['lecturer', 'session'], context?.previousData);
       toast.error('Failed to approve attendance');
     },
@@ -97,15 +90,12 @@ export function useApprovePendingAttendance() {
       toast.success('Attendance approved');
     },
     onSettled: () => {
-      // Refetch to sync with server
+
       queryClient.invalidateQueries({ queryKey: ['lecturer', 'session'] });
     },
   });
 }
 
-// ============================================
-// Reject Pending Attendance
-// ============================================
 export function useRejectPendingAttendance() {
   const queryClient = useQueryClient();
 
@@ -118,7 +108,6 @@ export function useRejectPendingAttendance() {
       await queryClient.cancelQueries({ queryKey: ['lecturer', 'session'] });
       const previousData = queryClient.getQueryData(['lecturer', 'session']);
 
-      // Optimistically update
       queryClient.setQueryData(['lecturer', 'session'], (old: any) => {
         if (!old) return old;
         

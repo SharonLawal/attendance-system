@@ -1,3 +1,8 @@
+/**
+ * @module controllers/authController
+ * @description Manages all authentication vectors including encrypted credential registration, secure HttpOnly cookie injection, JWT issuance, and Google OAuth federation.
+ * @requires express-async-handler For global error catching avoiding unhandled promise rejections.
+ */
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -6,7 +11,6 @@ const asyncHandler = require('express-async-handler');
 const { z } = require('zod');
 const sendEmail = require('../utils/sendEmail');
 
-// Validation Schemas
 const registerSchema = z.object({
     fullName: z.string().min(3),
     email: z.string().email().regex(/^[a-zA-Z0-9._%+-]+@(student\.)?babcock\.edu\.ng$/, 'Must be a valid @babcock.edu.ng or @student.babcock.edu.ng email'),
@@ -41,7 +45,7 @@ const generateRefreshToken = (user, rememberMe = false) => {
 const setAuthCookies = (res, accessToken, refreshToken, rememberMe = false) => {
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || true, // Must be true for sameSite 'none' across Render/Netlify
+        secure: process.env.NODE_ENV === 'production' || true,
         sameSite: 'none',
         maxAge: 15 * 60 * 1000
     });
@@ -259,7 +263,7 @@ const getMe = asyncHandler(async (req, res) => {
     if (!req.user) {
         return res.status(404).json({ success: false, message: 'User not found' });
     }
-    // Re-fetch so we always return the latest fields, including linkedGoogleEmail
+
     const user = await User.findById(req.user._id).select('-passwordHash -googleTokens');
     res.status(200).json({
         success: true,
@@ -274,12 +278,6 @@ const getMe = asyncHandler(async (req, res) => {
     });
 });
 
-// ─── Link Google Email ────────────────────────────────────────────────────────
-//
-// Any authenticated user can link their personal Gmail address.
-// This is what lets the Google Classroom roster/attendance sync find them,
-// since Google knows students by their Gmail, not their babcock.edu.ng email.
-//
 // @desc    Save user's personal Gmail address for sync matching
 // @route   PUT /api/auth/link-google-email
 // @access  Private (any role)
@@ -293,22 +291,19 @@ const linkGoogleEmail = asyncHandler(async (req, res) => {
 
     const trimmed = googleEmail.toLowerCase().trim();
 
-    // Basic format validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
         res.status(400);
         throw new Error('Invalid email format');
     }
 
-    // Must not be a babcock email — that would be confusing
     if (trimmed.endsWith('@babcock.edu.ng') || trimmed.endsWith('@student.babcock.edu.ng')) {
         res.status(400);
         throw new Error('Please enter your personal Gmail address, not your Babcock email');
     }
 
-    // Prevent two different accounts from linking the same Gmail
     const existingUser = await User.findOne({
         linkedGoogleEmail: trimmed,
-        _id: { $ne: req.user._id },  // not the current user
+        _id: { $ne: req.user._id },
     });
     if (existingUser) {
         res.status(400);
@@ -341,12 +336,11 @@ const uploadAvatar = asyncHandler(async (req, res) => {
         throw new Error('No image file provided');
     }
     const avatarUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/${req.file.filename}`;
-    
-    // We update the user and return the new URL
+
     const user = await User.findByIdAndUpdate(
         req.user._id, 
         { profilePicture: avatarUrl },
-        { new: true } // Return updated doc
+        { new: true }
     );
     
     res.json({ 

@@ -1,4 +1,8 @@
-// Middleware to check if the user has the required role
+/**
+ * @fileoverview Contextual execution boundary for backend/src/middleware/roleMiddleware.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 const authorizeRole = (...roles) => {
     return (req, res, next) => {
         if (!req.user || !req.user.role) {

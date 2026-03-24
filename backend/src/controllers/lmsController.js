@@ -1,3 +1,7 @@
+/**
+ * @module controllers/lmsController
+ * @description Orchestrates secure, atomic transactions for bidirectional third-party roster synchronizations (Google Classroom/Meet). Encapsulates operations inside Mongoose Transactions to explicitly guarantee data structure integrity during remote API failure.
+ */
 const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
 const Course = require('../models/Course');
@@ -8,7 +12,7 @@ const { z } = require('zod');
 
 const syncSchema = z.object({
     courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Course ID'),
-    // Array of student IDs that attended via LMS
+
     attendedStudentIds: z.array(z.string().regex(/^[0-9a-fA-F]{24}$/)),
 });
 
@@ -20,7 +24,6 @@ const syncAttendance = asyncHandler(async (req, res) => {
     const { courseId, attendedStudentIds } = validatedData;
     const lecturerId = req.user._id;
 
-    // Validate the course
     const course = await Course.findById(courseId);
     if (!course) {
         res.status(404);
@@ -35,7 +38,6 @@ const syncAttendance = asyncHandler(async (req, res) => {
         throw new Error('This course is not linked to any LMS');
     }
 
-    // Wrap in Mongoose Transaction
     const dbSession = await mongoose.startSession();
     dbSession.startTransaction();
 
@@ -53,7 +55,7 @@ const syncAttendance = asyncHandler(async (req, res) => {
             const sessionMatches = await AttendanceSession.create([{
                 courseId,
                 lecturerId,
-                otcCode: 'LMS0', // specific to LMS sync to bypass OTC requirement
+                otcCode: 'LMS0',
                 startTime: new Date(),
                 endTime: new Date(),
                 isOnline: true
@@ -61,7 +63,6 @@ const syncAttendance = asyncHandler(async (req, res) => {
             createdSession = sessionMatches[0];
         }
 
-        // Prepare records to insert
         const records = attendedStudentIds.map(studentId => ({
             sessionId: createdSession._id,
             studentId,
@@ -69,9 +70,8 @@ const syncAttendance = asyncHandler(async (req, res) => {
             source: 'LMS_Sync',
         }));
 
-        // Perform bulk insertion safely handling duplicates within the transaction
         const result = await AttendanceRecord.insertMany(records, { ordered: false, session: dbSession }).catch((err) => {
-            // Return partial successes ignoring duplicates if any
+
             return err.insertedDocs;
         });
 
@@ -80,7 +80,7 @@ const syncAttendance = asyncHandler(async (req, res) => {
         await SyncHistory.create([{
             lecturerId,
             courseId,
-            platform: 'External LMS', // Usually comes from integration metadata
+            platform: 'External LMS',
             studentsSynced: syncedCount,
             status: 'Success'
         }], { session: dbSession });

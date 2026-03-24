@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/lecturer/integrations/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -17,8 +22,6 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as lecturerService from "@/services/lecturerService";
 import apiClient from "@/lib/axios";
-
-// ─── Google Connection Card ──────────────────────────────────────────────────
 
 function GoogleConnectionCard() {
     const queryClient = useQueryClient();
@@ -91,8 +94,6 @@ function MicrosoftConnectionCard() {
         </Card>
     );
 }
-
-// ─── Google Classroom Attendance Sync ────────────────────────────────────────
 
 function GoogleAttendanceSyncPanel() {
     const [googleCourseId, setGoogleCourseId] = useState("");
@@ -187,8 +188,6 @@ function GoogleAttendanceSyncPanel() {
         </div>
     );
 }
-
-// ─── CSV Upload Panel ─────────────────────────────────────────────────────────
 
 function CSVUploadPanel() {
     const [veriPointCourseId, setVeriPointCourseId] = useState("");
@@ -329,8 +328,6 @@ function CSVUploadPanel() {
     );
 }
 
-// ─── Roster Sync Panel ────────────────────────────────────────────────────────
-
 function RosterSyncPanel() {
     const [googleCourseId, setGoogleCourseId] = useState("");
     const [veriPointCourseId, setVeriPointCourseId] = useState("");
@@ -387,8 +384,6 @@ function RosterSyncPanel() {
     );
 }
 
-// ─── Sync History ─────────────────────────────────────────────────────────────
-
 function SyncHistoryTable() {
     const { data: syncHistory = [], isLoading } = useQuery({ queryKey: ["lecturer", "syncHistory"], queryFn: lecturerService.getSyncHistory, staleTime: 60 * 1000 });
     const columns = [
@@ -405,8 +400,6 @@ function SyncHistoryTable() {
         </div>
     );
 }
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 type Tab = "attendance" | "csv" | "roster";
 

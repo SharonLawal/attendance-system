@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/hooks/useStudentDashboard.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { useQuery } from '@tanstack/react-query';
 import * as studentService from '@/services/studentService';
 import { transformStudentStats } from '@/utils/apiTransformers';

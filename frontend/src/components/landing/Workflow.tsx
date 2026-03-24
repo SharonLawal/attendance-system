@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/landing/Workflow.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { Pencil, MapPin, Check } from "lucide-react";
 
 export function Workflow() {

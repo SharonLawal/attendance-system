@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/lecturer/reports/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BarChart3, Download, AlertTriangle, Search, Filter } from "lucide-react";
@@ -15,8 +20,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 
 import { useLecturerCoursesSummary } from "@/hooks/useLecturerData";
 
-
-
 export default function LecturerReports() {
     const [filterCourse, setFilterCourse] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
@@ -26,7 +29,7 @@ export default function LecturerReports() {
 
     const { data: courses = [], isLoading } = useLecturerCoursesSummary();
 
-    const filteredData: any[] = []; // Replaced backend logic placeholder
+    const filteredData: any[] = [];
 
     const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
     const paginatedData = filteredData.slice(
@@ -38,8 +41,7 @@ export default function LecturerReports() {
         toast.success(`Warning email dispatched to ${studentName}`);
     };
 
-    // In a real app this would be computed or fetched from the backend. 
-    const atRiskStudents: any[] = []; // Currently no backend logic to drive this
+    const atRiskStudents: any[] = [];
 
     return (
         <DashboardLayout role="lecturer">

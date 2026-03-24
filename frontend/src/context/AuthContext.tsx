@@ -1,3 +1,7 @@
+/**
+ * @module context/AuthContext
+ * @description Central React Context Provider governing global authentication state, token-based session hydration, and cross-component authorization boundaries utilizing `useClient` boundaries.
+ */
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';

@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/lecturer/courses/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Users, ArrowRight, ChevronLeft, Loader2, Download, Table, AlertTriangle } from "lucide-react";
@@ -19,7 +24,6 @@ export default function LecturerCourses() {
 
   const { data: courses = [], isLoading } = useLecturerCoursesSummary();
 
-  // Fetch pending check-ins for the selected course (real enrolled students data)
   const { data: pendingData, isLoading: isLoadingDetails } = useQuery({
     queryKey: ["course", selectedCourse?.id, "pending"],
     queryFn: async () => {
@@ -31,7 +35,6 @@ export default function LecturerCourses() {
     staleTime: 30 * 1000,
   });
 
-  // Fetch full roster analytics 
   const { data: rosterPayload, isLoading: isLoadingRoster } = useQuery({
     queryKey: ["course", selectedCourse?.id, "roster"],
     queryFn: async () => {

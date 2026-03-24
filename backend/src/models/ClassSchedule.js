@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/models/ClassSchedule.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const mongoose = require('mongoose');
 
 const classScheduleSchema = new mongoose.Schema({
@@ -11,7 +15,7 @@ const classScheduleSchema = new mongoose.Schema({
         enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         required: true,
     },
-    // Store time as strings "HH:MM" (e.g., "09:00", "11:00")
+
     startTime: {
         type: String,
         required: true,

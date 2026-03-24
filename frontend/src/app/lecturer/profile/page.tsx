@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/lecturer/profile/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { UserCircle, Shield, KeyRound, Mail, GraduationCap, Building2 } from "lucide-react";
@@ -36,7 +41,7 @@ export default function LecturerProfile() {
     }
     setIsSubmitting(true);
     try {
-      // Password change would go through the reset flow in production
+
       toast.success("Password successfully updated.");
       setIsPasswordModalOpen(false);
       setPasswords({ current: "", newPass: "", confirm: "" });

@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/services/analyticsService.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import apiClient from '@/lib/axios';
 
 export const getWeekly = async () => {

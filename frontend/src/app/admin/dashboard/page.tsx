@@ -1,3 +1,7 @@
+/**
+ * @module app/admin/dashboard
+ * @description The highest-level administrative oversight console detailing systemic metrics, global user aggregates, and active cross-campus session telemetry.
+ */
 "use client";
 
 import { useState } from "react";

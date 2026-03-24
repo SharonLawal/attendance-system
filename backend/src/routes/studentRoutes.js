@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/routes/studentRoutes.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const express = require('express');
 const {
     getDashboard,
@@ -14,7 +18,6 @@ const { authorizeRole } = require('../middleware/roleMiddleware');
 
 const router = express.Router();
 
-// Public callback route (uses OAuth state param for identity)
 router.get('/link-google/callback', linkGoogleCallback);
 
 router.use(protect, authorizeRole('Student'));
@@ -27,6 +30,5 @@ router.get('/history', getHistory);
 router.get('/courses', getCourses);
 router.get('/schedule', getSchedule);
 router.get('/active-session', getActiveSession);
-
 
 module.exports = router;

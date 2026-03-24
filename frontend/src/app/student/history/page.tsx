@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/student/history/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState, useMemo } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { History, Search, Download, Filter } from "lucide-react";
@@ -18,10 +23,8 @@ export default function StudentHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch all history (high limit for client-side filtering)
   const { data, isLoading, error, refetch } = useStudentHistory(1, 100);
 
-  // Build unique course list from fetched data
   const courseOptions = useMemo(() => {
     if (!data?.data) return [{ label: "All Courses", value: "all" }];
     const codes = Array.from(new Set<string>(data.data.map((r: any) => r.course as string).filter(Boolean)));
@@ -31,7 +34,6 @@ export default function StudentHistory() {
     ];
   }, [data]);
 
-  // Client-side filtering
   const filteredRecords = useMemo(() => {
     if (!data?.data) return [];
     return data.data.filter((record: any) => {
@@ -46,7 +48,6 @@ export default function StudentHistory() {
     });
   }, [data, filterCourse, searchTerm]);
 
-  // Client-side pagination
   const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE) || 1;
   const paginatedRecords = filteredRecords.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,

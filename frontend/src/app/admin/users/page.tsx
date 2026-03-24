@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/admin/users/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Users, UserPlus, UploadCloud, MoreVertical, Edit, KeyRound, Ban, Trash2, Search, FileUp, AlertTriangle } from "lucide-react";
@@ -23,20 +28,16 @@ export default function AdminUsers() {
 
     const { data: usersData, isLoading } = useAdminUsers(currentPage, itemsPerPage, searchTerm, roleFilter);
 
-    // Filter Logic
     const paginatedUsers = usersData?.users || [];
     const totalPages = usersData?.pagination?.totalPages || 1;
 
-    // Modal States
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
     const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserToEdit | null>(null);
 
-    // Drag & Drop State
     const [isDragging, setIsDragging] = useState(false);
 
-    // Handlers
     const handleAddUserSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setIsAddUserModalOpen(false);
@@ -81,7 +82,6 @@ export default function AdminUsers() {
             )
         }
     ];
-
 
     return (
         <DashboardLayout role="admin">
@@ -207,7 +207,6 @@ export default function AdminUsers() {
                     </div>
                 </form>
             </Modal>
-
 
             <Modal
                 isOpen={isBulkUploadModalOpen}

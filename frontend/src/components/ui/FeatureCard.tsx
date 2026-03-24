@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/FeatureCard.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { LucideIcon } from "lucide-react";
 
 interface FeatureCardProps {

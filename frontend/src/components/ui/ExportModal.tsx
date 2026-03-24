@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/ExportModal.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React, { useState } from 'react';
 import { Modal } from './Modal';
 import { FileSpreadsheet, FileText, FileDown } from 'lucide-react';

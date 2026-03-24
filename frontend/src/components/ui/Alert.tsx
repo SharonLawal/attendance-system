@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/Alert.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React from "react";
 import { AlertTriangle, Info, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";

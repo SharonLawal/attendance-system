@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/admin/venues/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React, { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { MapPin, Navigation, Trash2, Loader2, Save, X, Edit, Plus, ArrowLeft } from "lucide-react";
@@ -83,7 +87,7 @@ export default function AdminVenueManager() {
         try {
             const polyCoords = venue.locationPolygon?.coordinates[0];
             if (polyCoords && polyCoords.length > 0) {
-                // Polygon closes on itself, so we drop the duplicated last coordinate in the UI
+
                 const uiCoords = polyCoords.slice(0, polyCoords.length - 1).map((coord: number[]) => ({
                     lng: coord[0],
                     lat: coord[1]
@@ -149,8 +153,8 @@ export default function AdminVenueManager() {
             return;
         }
         
-        const center = coordinates[coordinates.length - 1]; // Use last captured point
-        // ~15 meters in degrees
+        const center = coordinates[coordinates.length - 1];
+
         const offset = 0.00015;
         
         const boxCorners = [

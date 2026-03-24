@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/routes/analyticsRoutes.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const express = require('express');
 const {
     getWeeklyAttendance,
@@ -6,7 +10,7 @@ const {
     getDetailedReports
 } = require('../controllers/analyticsController');
 const { protect } = require('../middleware/authMiddleware');
-// Admin and potentially Lecturer might access analytics
+
 const { authorizeRole } = require('../middleware/roleMiddleware');
 
 const router = express.Router();

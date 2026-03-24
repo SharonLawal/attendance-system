@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/routes/adminRoutes.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const express = require('express');
 const {
     getSystemStats,

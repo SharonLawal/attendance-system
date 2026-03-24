@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/lib/validations/auth.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { z } from "zod";
 
 const BABCOCK_SCHOOLS = [
@@ -13,7 +17,6 @@ const BABCOCK_SCHOOLS = [
   "College of Postgraduate Studies",
 ] as const;
 
-// --- Rules ---
 const babcockEmailRule = z
   .string()
   .email("Please enter a valid email address")
@@ -37,14 +40,12 @@ const signupPasswordRule = z
 
 const loginPasswordRule = z.string().min(1, "Password is required");
 
-// --- Login Schema ---
 export const loginSchema = z.object({
   email: babcockEmailRule,
   password: loginPasswordRule,
   rememberMe: z.boolean(),
 });
 
-// --- Signup Schema ---
 export const signupSchema = z
   .object({
     fullName: z.string().min(2, "Full name is required"),
@@ -66,7 +67,7 @@ export const signupSchema = z
   })
   .refine(
     (data) => {
-      // School is required for Lecturers
+
       if (data.role === "Lecturer" && !data.school) return false;
       return true;
     },

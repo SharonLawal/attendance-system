@@ -1,3 +1,7 @@
+/**
+ * @module models/AttendanceSession
+ * @description Mongoose schema representing an active lecture instance. Tracks the one-time code (OTC), valid temporal window, and topology bounds implicitly inherited from the classroom definitions.
+ */
 const mongoose = require('mongoose');
 
 const attendanceSessionSchema = new mongoose.Schema({
@@ -29,7 +33,6 @@ const attendanceSessionSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    // GeoJSON Polygon for classroom boundaries
     locationPolygon: {
         type: {
             type: String,
@@ -37,13 +40,12 @@ const attendanceSessionSchema = new mongoose.Schema({
             required: function() { return !this.isOnline; },
         },
         coordinates: {
-            type: [[[Number]]], // Array of arrays of arrays of numbers [lng, lat]
+            type: [[[Number]]],
             required: function() { return !this.isOnline; },
         }
     },
 }, { timestamps: true });
 
-// Create a 2dsphere index on the locationPolygon field for geospatial queries
 attendanceSessionSchema.index({ locationPolygon: '2dsphere' });
 
 module.exports = mongoose.model('AttendanceSession', attendanceSessionSchema);

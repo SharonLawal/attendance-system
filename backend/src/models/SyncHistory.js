@@ -1,3 +1,7 @@
+/**
+ * @module models/SyncHistory
+ * @description Mongoose schema tracking the historical success and failure telemetry of automated third-party roster synchronizations (e.g., Google Classroom integrations).
+ */
 const mongoose = require('mongoose');
 
 const syncHistorySchema = new mongoose.Schema({

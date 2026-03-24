@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/routes/authRoutes.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const express = require('express');
 const {
     registerUser,
@@ -37,7 +41,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage,
-    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
+    limits: { fileSize: 2 * 1024 * 1024 },
     fileFilter: function (req, file, cb) {
         const filetypes = /jpeg|jpg|png|webp|gif/;
         const mimetype = filetypes.test(file.mimetype);
@@ -59,7 +63,6 @@ router.post('/logout', logoutUser);
 router.post('/refresh', refreshAccessToken);
 router.get('/me', protect, getMe);
 
-// Gmail linking — any authenticated user (student, lecturer, admin)
 router.put('/link-google-email', protect, linkGoogleEmail);
 router.delete('/link-google-email', protect, unlinkGoogleEmail);
 

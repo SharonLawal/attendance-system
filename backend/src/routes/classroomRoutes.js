@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/routes/classroomRoutes.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const express = require('express');
 const router = express.Router();
 const { 
@@ -11,10 +15,8 @@ const { authorizeRole } = require('../middleware/roleMiddleware');
 
 router.use(protect);
 
-// Lecturers and Admins can view venues
 router.get('/', getClassrooms);
 
-// Only Admins can execute mutating states
 router.use(authorizeRole('Admin'));
 router.post('/', createClassroom);
 router.put('/:id', updateClassroom);

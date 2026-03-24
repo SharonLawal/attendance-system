@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/(auth)/login/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -46,7 +51,6 @@ export default function LoginPage() {
     try {
       const result = await login(data.email, data.password, data.rememberMe);
 
-      // Redirect user directly to their role-specific dashboard based on the payload.
       if (result && result.role) {
         const dashboard = result.role.toLowerCase();
         window.location.href = `/${dashboard}/dashboard`;

@@ -1,3 +1,7 @@
+/**
+ * @module models/Classroom
+ * @description Mongoose schema for physical campus venues. Defines the strict 2dsphere GeoJSON Polygon boundaries enforced during geofenced attendance sessions.
+ */
 const mongoose = require('mongoose');
 
 const classroomSchema = new mongoose.Schema({
@@ -22,7 +26,7 @@ const classroomSchema = new mongoose.Schema({
             required: true,
         },
         coordinates: {
-            type: [[[Number]]], // Array of arrays of arrays of numbers [lng, lat]
+            type: [[[Number]]],
             required: true,
         }
     },
@@ -32,7 +36,6 @@ const classroomSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-// Strictly enforce geospatial indexing to prevent topology collisions
 classroomSchema.index({ locationPolygon: '2dsphere' });
 
 module.exports = mongoose.model('Classroom', classroomSchema);

@@ -1,3 +1,7 @@
+/**
+ * @module controllers/lecturerController
+ * @description Orchestrates the Lecturer access layer, including roster synchronization histories, real-time live attendance matrices, and override approvals for manual check-ins.
+ */
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const Course = require('../models/Course');
@@ -71,7 +75,6 @@ const getDashboard = asyncHandler(async (req, res) => {
         upcoming_sessions: []
     });
 });
-
 
 // @desc    Get courses with attendance summaries
 // @route   GET /api/lecturer/courses-summary
@@ -186,7 +189,7 @@ const getLiveSessionAttendees = asyncHandler(async (req, res) => {
     }
 
     const attendanceRecords = await AttendanceRecord.find({ sessionId: id })
-        .populate('studentId', 'fullName email universityId')   // ← FIXED: fullName not firstName/lastName
+        .populate('studentId', 'fullName email universityId')
         .sort({ checkedInAt: -1 })
         .lean();
 
@@ -206,7 +209,7 @@ const getLiveSessionAttendees = asyncHandler(async (req, res) => {
     const attendees = attendanceRecords.map(record => ({
         id: record._id,
         studentId: record.studentId?._id,
-        studentName: record.studentId?.fullName || 'Unknown Student',   // ← FIXED
+        studentName: record.studentId?.fullName || 'Unknown Student',
         studentEmail: record.studentId?.email || '',
         studentMatricNumber: record.studentId?.universityId || '',
         status: record.status,

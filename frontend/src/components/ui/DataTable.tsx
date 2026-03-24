@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/DataTable.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";

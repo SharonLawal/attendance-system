@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/lib/geo.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 export function generateGeoJSONCircle(center: [number, number], radiusInMeters: number, points = 32) {
   const longitude = center[0];
   const latitude = center[1];
@@ -12,7 +16,6 @@ export function generateGeoJSONCircle(center: [number, number], radiusInMeters: 
     ret.push([longitude + x, latitude + y]);
   }
 
-  // Close the polygon
   ret.push(ret[0]);
 
   return {

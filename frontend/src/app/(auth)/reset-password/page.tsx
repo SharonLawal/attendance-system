@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/(auth)/reset-password/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -10,7 +15,6 @@ import { toast } from "sonner";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { Loader2, ShieldCheck, Lock, Eye, EyeOff } from "lucide-react";
 
-// Use the exact secure requirements from the plan
 const resetPasswordSchema = z
     .object({
         password: z

@@ -1,9 +1,12 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/middleware/errorHandler.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const errorHandler = (err, req, res, next) => {
     const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
 
-    console.error(err); // Log the error for internal backend debugging
+    console.error(err);
 
-    // Handle Mongoose Validator Errors
     if (err.name === 'ValidationError') {
         return res.status(400).json({
             message: 'Validation Error',
@@ -11,7 +14,6 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    // Handle Zod Validation Errors
     if (err.name === 'ZodError') {
         const validationIssues = err.errors || err.issues || [];
         return res.status(400).json({

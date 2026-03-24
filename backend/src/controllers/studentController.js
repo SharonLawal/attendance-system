@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/controllers/studentController.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const { google } = require('googleapis');
@@ -63,11 +67,9 @@ const linkGoogleCallback = asyncHandler(async (req, res) => {
 const getDashboard = asyncHandler(async (req, res) => {
     const studentId = req.user._id;
 
-    // Get all records for this student
     const records = await AttendanceRecord.find({ studentId })
         .populate({ path: 'sessionId', populate: { path: 'courseId', select: 'courseCode courseName _id' } });
 
-    // Get unique course IDs this student has attendance records for
     const courseIds = [...new Set(
         records
             .map(r => r.sessionId?.courseId?._id?.toString())
@@ -89,14 +91,12 @@ const getDashboard = asyncHandler(async (req, res) => {
 
     const attendancePercentage = totalSessions === 0 ? 100 : Math.round((presentCount / totalSessions) * 100);
 
-    // Today's schedule
     const todaysSchedule = await ClassSchedule.find()
         .populate('courseId', 'courseCode courseName')
         .limit(3);
 
-    // Recent history — FIXED: sort by checkedInAt not timestamp
     const recentHistory = await AttendanceRecord.find({ studentId })
-        .sort({ checkedInAt: -1 })   // ← FIXED
+        .sort({ checkedInAt: -1 })
         .limit(5)
         .populate({
             path: 'sessionId',
@@ -137,7 +137,7 @@ const getDashboard = asyncHandler(async (req, res) => {
 // @route   GET /api/student/stats
 // @access  Private/Student
 const getDashboardStats = asyncHandler(async (req, res) => {
-    // Forward to the full dashboard so both endpoints return consistent data
+
     const studentId = req.user._id;
     const totalSessions = await AttendanceSession.countDocuments();
     const presentCount = await AttendanceRecord.countDocuments({ studentId, status: 'Present' });
@@ -156,7 +156,7 @@ const getHistory = asyncHandler(async (req, res) => {
 
     const [records, total] = await Promise.all([
         AttendanceRecord.find({ studentId })
-            .sort({ checkedInAt: -1 })   // ← FIXED
+            .sort({ checkedInAt: -1 })
             .skip(skip)
             .limit(limit)
             .populate({
@@ -295,8 +295,6 @@ const getActiveSession = asyncHandler(async (req, res) => {
         expiresAt: activeSession.endTime,
     });
 });
-
-
 
 module.exports = {
     getDashboard,

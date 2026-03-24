@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/hooks/useAdminData.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { useQuery } from '@tanstack/react-query';
 import * as adminService from '@/services/adminService';
 import { transformAdminStats, transformAdminUsers } from '@/utils/apiTransformers';
@@ -24,6 +28,6 @@ export function useAdminUsers(page: number = 1, limit: number = 10, search: stri
       if (!result.success) throw new Error(result.message);
       return result.data;
     },
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
   });
 }

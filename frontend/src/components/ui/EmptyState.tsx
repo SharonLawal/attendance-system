@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/EmptyState.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React from "react";
 import { SearchX, FileQuestion, CalendarX, FolderOpen } from "lucide-react";
 

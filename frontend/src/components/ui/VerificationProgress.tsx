@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/ui/VerificationProgress.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import React from "react";
 import { Check, Loader2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";

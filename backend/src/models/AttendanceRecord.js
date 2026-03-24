@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/models/AttendanceRecord.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const mongoose = require('mongoose');
 
 const attendanceRecordSchema = new mongoose.Schema({
@@ -45,7 +49,6 @@ const attendanceRecordSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-// Ensure a student can only have one attendance record per session
 attendanceRecordSchema.index({ sessionId: 1, studentId: 1 }, { unique: true });
 
 module.exports = mongoose.model('AttendanceRecord', attendanceRecordSchema);

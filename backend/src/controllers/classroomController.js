@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/controllers/classroomController.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const asyncHandler = require('express-async-handler');
 const Classroom = require('../models/Classroom');
 
@@ -14,8 +18,7 @@ const getClassrooms = asyncHandler(async (req, res) => {
 // @access  Private (Admin only)
 const createClassroom = asyncHandler(async (req, res) => {
     const { name, capacity, building, locationPolygon } = req.body;
-    
-    // Normalize casing for unique constraints
+
     const exists = await Classroom.findOne({ name: name.trim() });
     if (exists) {
         res.status(400);

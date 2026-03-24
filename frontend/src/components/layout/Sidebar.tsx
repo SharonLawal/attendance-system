@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/layout/Sidebar.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icons } from "@/constants/icons";
@@ -14,7 +19,6 @@ export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
 
-  // Navigation items based on role (SOLID: Interface Segregation)
   const navItems = {
     STUDENT: [
       { name: "Dashboard", href: "/student/dashboard", icon: Icons.Dashboard },

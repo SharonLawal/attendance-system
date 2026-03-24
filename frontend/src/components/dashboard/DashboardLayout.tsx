@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/dashboard/DashboardLayout.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -62,7 +67,6 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const router = useRouter();
 
-    // Client-side Route Protection
     useEffect(() => {
         if (!isLoading && !user) {
             router.replace('/login');
@@ -71,13 +75,10 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         }
     }, [user, isLoading, role, router]);
 
-    // Close sidebar on route change for mobile
     useEffect(() => {
         setSidebarOpen(false);
     }, [pathname]);
 
-
-    // Prevent body scroll when sidebar is open on mobile
     useEffect(() => {
         if (sidebarOpen) {
             document.body.style.overflow = 'hidden';
@@ -104,7 +105,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     }
 
     if (!user) {
-        return null; // Prevents UI flash before the router redirects
+        return null;
     }
 
     return (

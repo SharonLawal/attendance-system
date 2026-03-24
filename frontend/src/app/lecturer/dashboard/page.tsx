@@ -1,3 +1,8 @@
+/**
+ * @module app/lecturer/dashboard
+ * @description The primary Lecturer Dashboard interface. Orchestrates active lecture sessions, live attendance tracking matrices, course creation modals, and hardware telemetry.
+ * Leverages React Query hooks derived from lecturerService for aggressive state caching.
+ */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -24,7 +29,6 @@ export default function LecturerDashboard() {
   const [otc, setOtc] = useState("");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
-  // Queries
   const { data: dashboardData, isLoading: isLoadingDashboard, refetch: refetchDashboard } = useLecturerDashboard();
   const { data: coursesData, isLoading: isLoadingCourses, refetch: refetchCourses } = useLecturerCourses();
   const { data: attendeesData, isLoading: isLoadingAttendees } = useLiveSessionAttendees(activeSessionId);
@@ -33,7 +37,6 @@ export default function LecturerDashboard() {
   const courses = coursesData || [];
   const classrooms = classroomsData || [];
 
-  // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -44,7 +47,6 @@ export default function LecturerDashboard() {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [sessionDuration, setSessionDuration] = useState("5");
 
-  // Sync state with dashboard data
   useEffect(() => {
     if (dashboardData?.activeSession && !sessionActive) {
       const active = dashboardData.activeSession;
@@ -60,13 +62,10 @@ export default function LecturerDashboard() {
     }
   }, [dashboardData, sessionActive]);
 
-  // Sync live stats timestamp if polled
   useEffect(() => {
-    // Note: Live attendees polling doesn't return time remaining currently.
-    // relying on local fallback clock.
+
   }, [attendeesData]);
 
-  // Fallback local timer to smooth out 5s polling gaps
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -120,7 +119,7 @@ export default function LecturerDashboard() {
       toast.info("Active session has been closed.");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to end session cleanly.");
-      // Force local clean anyway to prevent getting stuck
+
       setSessionActive(false);
       setActiveSessionId(null);
     }
@@ -130,13 +129,12 @@ export default function LecturerDashboard() {
     try {
       if (!activeSessionId) return;
       await lecturerService.extendSession(activeSessionId, 5);
-      setTimeLeft(prev => prev + 300); // add 5 minutes on the frontend clock
+      setTimeLeft(prev => prev + 300);
       toast.success("Session extended by 5 minutes.");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to extend session.");
     }
   };
-
 
   return (
     <DashboardLayout role="lecturer">

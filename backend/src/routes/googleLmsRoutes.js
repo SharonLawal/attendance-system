@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/routes/googleLmsRoutes.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const express = require('express');
 const multer = require('multer');
 const {
@@ -16,7 +20,6 @@ const { authorizeRole } = require('../middleware/roleMiddleware');
 
 const router = express.Router();
 
-// multer — store CSV in memory (no disk writes), 5 MB limit
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
@@ -29,10 +32,8 @@ const upload = multer({
     },
 });
 
-// Public — Google redirects here after OAuth approval
 router.get('/callback', handleCallback);
 
-// All routes below are Lecturer-only
 router.use(protect, authorizeRole('Lecturer'));
 
 router.get('/auth', getAuthUrl);
@@ -41,7 +42,7 @@ router.delete('/disconnect', disconnectGoogle);
 router.get('/courses', getGoogleCourses);
 router.get('/assignments', getGoogleAssignments);
 router.post('/sync-roster', syncRoster);
-router.post('/sync-attendance', syncLatestAttendance);  // Sync specific assignment
-router.post('/import-meet-csv', upload.single('file'), importMeetCsv);  // CSV from meetlist.io extension
+router.post('/sync-attendance', syncLatestAttendance);
+router.post('/import-meet-csv', upload.single('file'), importMeetCsv);
 
 module.exports = router;

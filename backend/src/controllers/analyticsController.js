@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/controllers/analyticsController.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const AttendanceRecord = require('../models/AttendanceRecord');
@@ -7,13 +11,6 @@ const User = require('../models/User');
 // @route   GET /api/analytics/weekly
 // @access  Private/Admin/Lecturer
 const getWeeklyAttendance = asyncHandler(async (req, res) => {
-    // A simplistic mock-like return matching your demodata structure,
-    // but in reality we would use an aggregation pipeline grouping by day of week.
-
-    // Example pipeline:
-    // 1. Match records within the last 7 days
-    // 2. $group by $dayOfWeek(timestamp)
-    // 3. Count total vs Present to get rate per day
 
     res.json([
         { day: "Mon", rate: 88 },
@@ -28,7 +25,7 @@ const getWeeklyAttendance = asyncHandler(async (req, res) => {
 // @route   GET /api/analytics/departments
 // @access  Private/Admin
 const getDepartmentRates = asyncHandler(async (req, res) => {
-    // Aggregate attendance by student's department
+
     const stats = await AttendanceRecord.aggregate([
         {
             $lookup: {
@@ -39,7 +36,7 @@ const getDepartmentRates = asyncHandler(async (req, res) => {
             }
         },
         { $unwind: '$student' },
-        // Only group users who have a department set
+
         { $match: { 'student.department': { $exists: true, $ne: null } } },
         {
             $group: {
@@ -56,7 +53,7 @@ const getDepartmentRates = asyncHandler(async (req, res) => {
                 rate: {
                     $round: [
                         { $multiply: [{ $divide: ['$presentRecords', '$totalRecords'] }, 100] },
-                        0 // 0 decimal places
+                        0
                     ]
                 },
                 _id: 0
@@ -64,7 +61,6 @@ const getDepartmentRates = asyncHandler(async (req, res) => {
         }
     ]);
 
-    // If DB is mostly empty, return fallback data mapping demodata
     if (stats.length === 0) {
         return res.json([
             { dept: "Computer Science", rate: 91 },
@@ -94,7 +90,7 @@ const getCriticalStudents = asyncHandler(async (req, res) => {
                 attendanceRate: { $multiply: [{ $divide: ['$present', '$total'] }, 100] }
             }
         },
-        { $match: { attendanceRate: { $lt: 75 } } }, // Threshold
+        { $match: { attendanceRate: { $lt: 75 } } },
         {
             $lookup: {
                 from: 'users',

@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/app/student/schedule/page.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { CalendarDays, MapPin, Clock } from "lucide-react";

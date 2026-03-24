@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/layout/Navbar.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Icons } from "@/constants/icons";

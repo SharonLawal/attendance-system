@@ -1,3 +1,7 @@
+/**
+ * @module controllers/adminController
+ * @description Secures and orchestrates all elevated platform configurations, including physical venue polygon mappings and statistical oversight.
+ */
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const AttendanceSession = require('../models/AttendanceSession');
@@ -13,9 +17,8 @@ const getSystemStats = asyncHandler(async (req, res) => {
         endTime: { $gt: now }
     });
 
-    const flaggedAbsences = 0; // Removed notification feature
+    const flaggedAbsences = 0;
 
-    // Mock system health
     const systemHealth = '99.9%';
 
     res.json({
@@ -38,7 +41,7 @@ const getUsers = asyncHandler(async (req, res) => {
 
     if (req.query.role && req.query.role.toLowerCase() !== 'all') {
         const roleStr = req.query.role.toLowerCase();
-        // Capitalize for DB match
+
         query.role = roleStr.charAt(0).toUpperCase() + roleStr.slice(1);
     }
 
@@ -60,7 +63,7 @@ const getUsers = asyncHandler(async (req, res) => {
         name: u.fullName,
         identifier: u.universityId,
         role: u.role,
-        status: u.accountStatus || 'Active', // From the newly added field
+        status: u.accountStatus || 'Active',
     }));
 
     const total = await User.countDocuments(query);

@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/landing/Navbar.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import Link from 'next/link';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
 

@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/auth/PasswordStrengthIndicator.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import { Check, X } from "lucide-react";
 
 interface PasswordStrengthProps {
@@ -15,7 +19,6 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthProps) {
 
     const metCount = requirements.filter((req) => req.met).length;
 
-    // Calculate percentage for progress bar (0 to 100)
     const strengthPercentage = (metCount / requirements.length) * 100;
 
     const getStrengthColor = () => {
@@ -32,7 +35,6 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthProps) {
         return "Strong";
     };
 
-    // Only show if user has started typing
     if (!password) return null;
 
     return (

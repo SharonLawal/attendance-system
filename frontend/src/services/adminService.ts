@@ -1,3 +1,7 @@
+/**
+ * @module services/adminService
+ * @description Client-side API binding utility for elevated administrative calls. Orchestrates physical venue queries and global statistical aggregations.
+ */
 import apiClient from '@/lib/axios';
 
 export const getStats = async () => {

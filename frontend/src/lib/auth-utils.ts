@@ -1,10 +1,13 @@
-// Define the structure for Login Credentials
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/lib/auth-utils.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-// Define the structure for Signup Data
 export interface SignupData {
   fullName: string;
   email: string;
@@ -14,7 +17,6 @@ export interface SignupData {
   role: "Student" | "Lecturer" | "Admin";
 }
 
-// Standard API Response type
 export interface AuthResponse {
   success: boolean;
   message: string;
@@ -30,10 +32,8 @@ export interface AuthResponse {
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   console.log("Attempting Login:", credentials);
 
-  // Simulate network delay (1.5 seconds)
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  // 1. Validate Email Domain (Babcock Constraint)
   if (!credentials.email.endsWith("@babcock.edu.ng") && !credentials.email.endsWith("@student.babcock.edu.ng")) {
     return {
       success: false,
@@ -41,7 +41,6 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     };
   }
 
-  // 2. Validate Password Length (Basic Security)
   if (credentials.password.length < 6) {
     return {
       success: false,
@@ -49,7 +48,6 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     };
   }
 
-  // 3. Simulate Backend Role Determination
   let determinedRole: "Student" | "Lecturer" | "Admin" = "Student";
   if (credentials.email.includes("admin")) {
     determinedRole = "Admin";
@@ -57,7 +55,6 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     determinedRole = "Lecturer";
   }
 
-  // 4. Success Case
   return {
     success: true,
     message: "Login successful! Redirecting...",
@@ -69,7 +66,6 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 export const signup = async (data: SignupData): Promise<AuthResponse> => {
   console.log("Attempting Signup:", data);
 
-  // Simulate network delay (2 seconds)
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   if (data.password !== data.confirmPassword) {

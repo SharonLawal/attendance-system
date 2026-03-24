@@ -1,3 +1,7 @@
+/**
+ * @module utils/apiTransformers
+ * @description Enforces strict structural normalization across all incoming asynchronous server payloads. Extracts normalized strings to guarantee safe React UI error hydration.
+ */
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
@@ -101,7 +105,7 @@ export function transformLiveSessionStats(apiData: any): ApiResponse {
       checkedInCount: payload.checked_in_count || 0,
       expectedCount: payload.expected_count || 0,
       attendanceRate: payload.attendance_rate || 0,
-      timeRemaining: payload.time_remaining || 0, // in seconds
+      timeRemaining: payload.time_remaining || 0,
       startTime: payload.start_time,
       endTime: payload.end_time,
     }

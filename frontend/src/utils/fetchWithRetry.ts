@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/utils/fetchWithRetry.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import apiClient from '@/lib/axios';
 
 /**
@@ -19,7 +23,7 @@ export async function fetchWithRetry(url: string, options = {}, retries = 3): Pr
             } else if (method.toLowerCase() === 'post') {
               response = await apiClient.post(url, (options as any).data, options);
             } else {
-               // Fallback
+
                response = Object.assign({}, await apiClient({ url, ...options }));
             }
             
@@ -28,13 +32,10 @@ export async function fetchWithRetry(url: string, options = {}, retries = 3): Pr
             const isClientError = error.response?.status >= 400 && error.response?.status < 500;
             const isLastAttempt = i === retries - 1;
 
-            // Do not retry client errors (like 401 Unauthorized or 400 Bad Request) 
-            // since those won't fix themselves with a retry.
             if (isClientError || isLastAttempt) {
                 throw error;
             }
 
-            // Exponential backoff
             const delay = Math.min(1000 * 2 ** i, 10000);
             await new Promise(resolve => setTimeout(resolve, delay));
         }

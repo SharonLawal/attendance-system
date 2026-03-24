@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contextual execution boundary for backend/src/config/db.js
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 const mongoose = require('mongoose');
 
 const connectDB = async () => {

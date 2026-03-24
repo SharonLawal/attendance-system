@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/components/lecturer/CreateCourseModal.tsx
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,7 +15,6 @@ import { BookOpen, Hash, Users, Activity, FileText } from "lucide-react";
 import { toast } from "sonner";
 import apiClient from "@/lib/axios";
 
-// Schema matching the backend's rigorous Course.js validation
 const createCourseSchema = z.object({
     courseCode: z.string()
         .toUpperCase()
@@ -28,7 +32,7 @@ type CreateCourseFormData = z.infer<typeof createCourseSchema>;
 interface CreateCourseModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void; // Triggered so the parent dashboard refreshes its list
+    onSuccess: () => void;
 }
 
 export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseModalProps) {
@@ -56,9 +60,9 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseMo
         try {
             await apiClient.post("/api/courses", data);
             toast.success("Course created successfully!");
-            reset(); // Clear form
-            onSuccess(); // Tell dashboard to re-fetch
-            onClose();   // Dismiss modal
+            reset();
+            onSuccess();
+            onClose();
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Failed to create course.");
         } finally {

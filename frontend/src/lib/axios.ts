@@ -1,8 +1,12 @@
+/**
+ * @fileoverview Contextual execution boundary for frontend/src/lib/axios.ts
+ * @description Enforces strict software engineering principles, modular separation of concerns, and logical scoping.
+ */
 import axios from 'axios';
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true, // Send cookies automatically
+  withCredentials: true,
 });
 
 let isRefreshing = false;
@@ -17,19 +21,17 @@ const onRefreshed = (token: string) => {
   refreshSubscribers = [];
 };
 
-// Response interceptor for handling 401 errors
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // If 401 and not already retrying, AND it's not the login endpoint itself
     const isAuthEndpoint = originalRequest.url?.includes('/api/auth/login') || originalRequest.url?.includes('/api/auth/refresh');
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
 
       if (isRefreshing) {
-        // Wait for refresh to complete
+
         return new Promise((resolve) => {
           subscribeTokenRefresh(() => {
             resolve(apiClient(originalRequest));
@@ -41,18 +43,16 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Attempt to refresh token
+
         await apiClient.post('/api/auth/refresh');
 
         isRefreshing = false;
         onRefreshed('refreshed');
 
-        // Retry original request
         return apiClient(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
 
-        // Refresh failed - redirect to login, but only if we are not already there
         if (typeof window !== 'undefined') {
           const publicPaths = ['/', '/login', '/register', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
           if (!publicPaths.includes(window.location.pathname)) {
