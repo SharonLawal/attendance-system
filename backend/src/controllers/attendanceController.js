@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const AttendanceSession = require('../models/AttendanceSession');
 const AttendanceRecord = require('../models/AttendanceRecord');
 const Course = require('../models/Course');
+const { generateGeoJSONCircle } = require('../utils/geoUtils');
 
 const markAttendanceSchema = z.object({
     otcCode: z.string().length(6, 'OTC Code must be exactly 6 digits'),
