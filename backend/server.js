@@ -19,9 +19,12 @@ const adminRoutes = require('./src/routes/adminRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const classroomRoutes = require('./src/routes/classroomRoutes');
 
-connectDB();
+if (process.env.NODE_ENV !== 'test') {
+    connectDB();
+}
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(cors({
     origin: function (origin, callback) {
@@ -63,8 +66,12 @@ app.use(errorHandler);
 
 const keepAlive = require('./src/utils/keepAlive');
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    keepAlive();
-});
+if (process.env.NODE_ENV !== 'test') {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        keepAlive();
+    });
+}
+
+module.exports = app;
