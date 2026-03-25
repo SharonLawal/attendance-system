@@ -27,7 +27,6 @@ const syncHistorySchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Success', 'Failed', 'Failed (API Error)', 'Partial Success'],
         required: true,
     },
 }, { timestamps: true });
